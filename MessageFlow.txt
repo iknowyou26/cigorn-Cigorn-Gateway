@@ -1,0 +1,81 @@
+
+Description of Message flow through the Gateway
+
+Message input into the inbound queue
+    Network/LAN
+        A Socket is created for each TCP/IP port that we are listening for data on
+        The SocketThread runs in background, and sequentiall calls each TCP socket 
+        tcp_socket() brings in data from the Ethernet interface
+            Each socket has its own data parser instance.
+            tcp_socket() calls dataparser::parse(char *buff, int count, int devdes, int devicetype) to parse the input data
+                parse() uses the devicetype to determine what data parse logic to use
+                    The devicetype may be any defined device type (dDataModem, dCigorn, dTerminal,...)
+                    Within parse() are low-level routines to parse any protocol we support.
+                        Low-level parsers process the incomming bytes, store them, parse, clear buffer if invalid...
+                        Low-level parsers create a structure "NewEntry" and push it into the input Queue   qMSGin.push(NewEntry)
+                        Low-level parsers extract the data from the incomming buffer.  ExtractData()
+
+    Serial/RS232
+        A background thread CommThread calls HandleRS232Comms()
+        Each RS232 serial port has its own COMport[i] class created for it
+        HandleRS232Comms() checks if a COMport[i].handle is created, and if so, calls COMport[i].GetChars()
+            Each COMport[i] has its own data parser instance.
+            COMport[i].GetChars() calls dataparser::parse(char *buff, int count, int devdes, int devicetype) to parse the input data
+                parse() uses the devicetype to determine what data parse logic to use
+                    The devicetype may be any defined device type (dDataModem, dCigorn, dTerminal,...)
+                    Within parse() are low-level routines to parse any protocol we support.
+                        Low-level parsers process the incomming bytes, store them, parse, clear buffer if invalid...
+                        Low-level parsers create a structure "NewEntry" and push it into the input Queue   qMSGin.push(NewEntry)
+                        Low-level parsers extract the data from the incomming buffer.  ExtractData()
+
+
+Removing a Message out of the qMSGin and routing it to the proper outbound queue.
+    CommThread is a background task handling communications
+    CommThread checks the count in the qMSGin queue to see if there is anything in it. It calls processMSGinput() if there is.
+        processMSGinput() gets the oldest message storing it in the Min class.
+        processMSGinput() calculates messaging statistics and delays from input to this point
+        processMSGinput() calls WNAT.AddressTranslate(Min) to modify the dstID of the message if WNAT is used.
+            ProcessInterSiteXML(Min) is run if the message is from another gateway.
+        processMSGinput() adds an entry in the dtWD table for each ID it gets a message from.
+        processMSGinput() calls SiteManager.NewMessageIn(Min, enabled) if this is a site-control message (trunking, channel change, ...)
+        processMSGinput() calls DataRouter.DoRouting(Min)  which handles the message routing
+            ROUTER
+            DataRouter.DoRouting(Min) calls DataRouter.RouteMSG(Min) based upon the Min.format
+                DataRouter.RouteMSG(Min) checks if this is a duplicate message. Throws it out if it is.
+                DataRouter.RouteMSG(Min) loops through every entry in the dtROUTES to see if this message should be routed.
+                    RouteBinTo(RouteTable[i].dstInter, msg.data, msg.bcount) is called if the message should be routed.
+                    ProtocolTranslate(msg, XMsg) checks outbound devdes to see if the message format needs translation (to WMX)
+                    RouteBinTo() threadlocks the outbound Q and puts a copy of the message in for each devicedesignator it is to be routed to.
+                        qETHout.push(NewEntry) is pushed if this goes to an ethernet port
+                        qTTYout.push(NewEntry) is pushed if this goes to a serial tty port
+        processMSGinput() updates the statistics for this ID in the dtWD table
+        processMSGinput() threadlocks the queue and pops the old message.  qMSGin.pop()
+
+Sending a message to a serial port from the outbound queue
+    HandleRS232Comms() checks the size of the qTTYout queue to see if there are any serial messages
+    HandleRS232Comms() calls COMport[i].MsgQout.push(TopEntry) to put the message into the queue for the particular serial port
+    This double-queueing stops one serial port from clogging up the main qTTYout message flow.
+    HandleRS232Comms() calls COMport[i].MsgQout.size() to see if there is a message in the particular tty queue
+    HandleRS232Comms() calls COMport[i].SendBytes() to put the message into the serial port tty buffer if there is room in it.
+        COMport[i].MsgQout.pop() is called to remove the message from the serial ports message queue.
+
+Sending a message to a Ethernet port from the outbound queue
+    threadTCPserver() runs as a background thread
+    threadTCPserver() checks the qETHout.size() to see if there are message to be sent out
+    threadTCPserver() gets a copy of the oldest message in the queue
+       threadTCPserver() calls tcpsockets[sockindex].MsgQout.push(TopEntry) to put the old message in the MsgQout queue of the socket.
+       This double-queueing stops one socket from clogging up the main qTTYout message flow.
+       WNAT.PortTranslate(TopEntry) determines the proper output port for the message to be sent to
+       threadTCPserver() calls each instance of tcpsockets[sockindex].tcp_socket() to execute the socket
+         tcpsockets[sockindex].tcp_socket() checks MsgQout.size() to see if there is a message to send out
+         tcpsockets[sockindex].tcp_socket() pops the message  MsgQout.pop()
+         tcpsockets[sockindex].tcp_socket() calls  sendbytes(TopEntry.data, TopEntry.bcount)
+            sendbytes() loads the socket's tcpsockets[sockindex].txbuff[] array with the chars to output and sets txcount to the byte count
+         tcpsockets[sockindex].tcp_socket() checks the txcount to see if there are bytes to be sent out.
+            If there are bytes,  tcpsockets[sockindex].tcp_socket() calls write(newsockfd, txbuff, txcount) to write the bytes to the linux socket buffer
+
+
+
+To add another protocol to the router
+1.  Define the new protocol index in DeviceList.h  start the index with a lower-case d  (dXXXXX)
+

@@ -1,0 +1,50 @@
+
+June 26, 2011  1.3.3    Demo to Dominion in Clarksburg, WV
+June 26, 2011  1.3.5    Demo to Dominion in Clarksburg, WV
+            Filtered +++ out of ethernet
+June 27, 2011  1.3.6    Demo to Dominion in Clarksburg, WV
+            Removed +++ filter
+            Put in web view of DeviceDesignator list
+
+November 28, 2011  2.1.0
+            Renamed to cigorngateway
+            Responds to the cigorn daemon written by Chad
+            Added command-line interface via telnet.  Default port 2300.
+Dec 5, 2011  2.2.6  Released to Dominion during JS visit
+            Added EXIT command.
+            Got CLI working well over telnet.
+            Added SHOW HISTORY to show a history of routes.
+            Initial CIgorn Gateway on DOMCIG2 tested OK with this.
+Dec 9, 2011  2.2.9  Modified in West Virginia per customer requests
+            Autodetect terminal type, and does CRLF translation on CLI if needed
+            Made sign-on text less verbose
+            Move more console messages to the CLI output
+
+Dec 24,2011 2.3.0  Added support for TCP/IP keep-alive packets
+            If parm1 < 0 then keepalive is enabled on a socket.
+            Removed map portlist.
+            Added ForceClientDisconnect flag in socket
+            changed CLIENT_PORT_BASE from 50000 to 10000
+            Sped up the re-connect if a remote server drops my TCP client connection.
+
+Feb 21, 2012   2.3.1   Added "description" to socket status message when it tries to reconnect.
+
+March 6, 2012  2.3.2    Rewrote IsNewMessage().  Duplicate filtering working now.
+                        Change debug messages to BOLD the source ID on debug messages
+                        Eliminated duplicate checking on ASCII messages.
+                        RESTART NOW  command works.
+                        Added  SOCKETS DROP  [ALL,  ###, DevDes] command.  ### is port.  DevDes is the text device designator
+                        Fixed time-out in WEB server eliminating the periodic failed page issue.
+                        Fixed RELOAD xxxx table so that it erases the table before reloading it.
+                        Allow duplicate RF channel numbers.  Issues warning 923 if there are some.
+                        Left this version in Gateway at JCPSS April 19, 2012
+
+April 24, 2012  2.3.3   Made CLI easier to read with lighter text for black background.
+                        Fixed widecard route table match.  Previous 2.3.2 matched all.
+                        Got RESTART NOW working.
+                        Modified look4command() so it does not trim off tabs and spaces
+                        ALT ENTER will repeat the last command
+                        Moves some code out of main.cpp into subroutines in mainsubs1.cpp
+
+
+

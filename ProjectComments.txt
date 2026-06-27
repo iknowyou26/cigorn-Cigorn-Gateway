@@ -1,0 +1,38 @@
+
+
+
+Compiler Notes:
+
+C++ complier must have the    -D_REENTRANT  option for threading.
+Linker must have  -lpthread  option for threading.
+
+
+Changing most of your functions to take the vector parameters by const reference rather than by value.
+As a result of your code, you are pushing entire copies of vectors onto the stack when you call your functions.
+
+To Look Into:
+    verify widecard route table DD match works properly
+    MyParser.initialize() should be called when we disconnect a client TCP socket
+    IDs in PRAVE are in HEX, but PRAVE parser and cli interprets them as integer.
+    When duplicate messages come in from multiple base stations, the output from the debug port show duplicates with same RSSI.  Why?
+    Memory is not released as outbound queues grow, then flush.
+    Slow down Comm thread a bit to reduce CPU load.
+    count stats on old deleted messages removed from queues
+    Device Comm web base someties shows a socket not connected, when it is. Connected Sockets shows it ok.  It was the first entry in the list. DEBUG.
+
+
+Bugs:
+  Threadlock Newsitemessage when it is changed
+  ourdevices.getBinding() returns 0 if no binding.  It should be -1, but check code to make sure -1 is OK.
+
+Features to Add:
+    Show list of IDs, date, time, RSSI, byte count, of most recent receptions.
+
+
+Document this stuff in user manual:
+
+    postgres socket is always:  5431
+    Server link to backup/primary gateway is always: 5443
+    Client link to backup/primary gateway is always: 5444
+    Client connections us ports 10000 - 15000
+    COmmand-line commands.  GATEWAY ACTIVE YES/NO

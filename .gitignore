@@ -1,0 +1,8 @@
+build/
+build-debug/
+build-release/
+*.o
+cigorn
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
