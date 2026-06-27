@@ -192,7 +192,7 @@ void send_reboot_email(emailer* pmailer){
     htmlformatter fm;
     emailcontent newemail;
 
-    newemail.to = "js@raveontech.com";
+    newemail.to = "rl@raveon.com";
     newemail.from = "cigorn@ravtrack.com";
     newemail.subjectline = pmailer->subject + " System Rebooted ";
 
@@ -266,7 +266,7 @@ int BuildRouteTable(void ){
            DataRouter.AddRoute(NewEntry);  // add the new entry to the route table
 
       }
-   
+   return 0;   
 }
 
 int BuildWNATtable(void ){
@@ -441,6 +441,8 @@ bool ChangeConfigSetting(const string& idxfld, const string&  idxval, const stri
     myDB.PushChangesToDB(dtSC);
     mlog.store("Configuration parameter " + idxval + " changed to " + newval);
 
+
+    return true;
 }
 
 
