@@ -786,9 +786,8 @@ int InitializeComPorts(void){
         COMport[i].myDevType = dNONE;
         pthread_mutex_unlock(&ttylock);
     }
-
-    
-};
+    return 0;
+}
 
 
 void HandleRS232Comms(void){
@@ -1420,8 +1419,8 @@ bool ResetSerial(string ResetDevDes){
             }
         }
     }
-    return retval;
-};
+    return 0;
+}
 
 /**
  * Gets the current measured comm loop speed, in Hz

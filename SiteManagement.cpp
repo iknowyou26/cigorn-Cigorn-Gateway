@@ -200,5 +200,7 @@ bool SiteManagement::AddRFport(int ch, int devindex, int devtype){
   RFports[ch].msgOut = 0;
   RFports[ch].DevDesIndx = devindex;
 
+  return true;
+
 }
 
