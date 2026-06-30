@@ -1,0 +1,17 @@
+
+</>INI
+[Unit]
+Description=Cigorn Gateway 5.0.1
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/cigorn/CigornGateway-5.0.1
+ExecStart=/opt/cigorn/CigornGateway-5.0.1/cigorn
+Restart=always
+RestartSec=5
+User=ryan
+
+[Install]
+WantedBy=multi-user.target

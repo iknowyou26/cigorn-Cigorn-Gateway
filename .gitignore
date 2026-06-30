@@ -6,3 +6,9 @@ cigorn
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
+.vscode/
+logs/*.log
+build-debug/
+build/
+*.o
+*.swp
