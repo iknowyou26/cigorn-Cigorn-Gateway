@@ -1,15 +1,13 @@
 #include "DeviceRepository.h"
 
-DeviceRepository::DeviceRepository(PostgresDatabase& db)
-    : db_(db)
+DeviceRepository::DeviceRepository(IDatabase* database)
 {
+    db = database;
 }
 
 bool DeviceRepository::Load()
 {
-    return db_.Query(
-    "SELECT * FROM wdevice;",
-    result_);
+    return db->Query("SELECT * FROM wdevice;", result_);
 }
 
 DBResult& DeviceRepository::Data()
