@@ -18,12 +18,13 @@ file(GLOB CIGORN_CPP "*.cpp")
 file(GLOB REPOSITORY_CPP "repositories/*.cpp")
 file(GLOB TINYXML_CPP "tinyxml/*.cpp")
 file(GLOB POLARSSL_C "polarssl/*.c")
-
+file(GLOB ADAPTER_CPP "adapters/*.cpp")
 add_executable(cigorn
     ${CIGORN_CPP}
     ${REPOSITORY_CPP}
     ${TINYXML_CPP}
     ${POLARSSL_C}
+    ${ADAPTER_CPP}
 )
 
 target_link_libraries(cigorn

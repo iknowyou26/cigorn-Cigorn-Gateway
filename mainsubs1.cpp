@@ -20,7 +20,11 @@
 #include <sys/resource.h>
 #include "sync-roles.h"
 #include "PagerTable.h"
-
+#include "repositories/PagerRepository.h"
+#include <vector>
+#include "repositories/RouteRepository.h"
+#include "adapters/RouteTableAdapter.h"
+#include "PostgresDatabase.h"
 using namespace std;
 
 void SendStatusEmail(emailer* pmailer, string notice){
@@ -56,7 +60,10 @@ void SendStatusEmail(emailer* pmailer, string notice){
     }
 
     // Make a table with the information
-
+    // dtPagers = new datatable(PagerDBTable, pagerNumberColumn);
+    // dtPagers->AutoAddRows = false;
+    // myDB.LoadTable(dtPagers);
+    // dtPagers->parentdb = aDB;
     // The table data
     ss << BuildStatsHTML();    // make an HTML string of our statistics
 
@@ -247,28 +254,44 @@ void send_reboot_email(emailer* pmailer){
    
 }
 
-int BuildRouteTable(void ){
+int BuildRouteTable(void)
+{
+    DataRouter.ClearAll();
 
-    int i;
+    PostgresDatabase db;
 
-    DataRouter.ClearAll();         // erase all route table entries
-    routeEntry NewEntry;
+    if (!db.Connect(myDB.LastConnInfo))
+    {
+        cout << "BuildRouteTable DB connect failed: "
+             << db.LastError() << endl;
+        return -1;
+    }
 
-       // loop through the entries in the route table, and copy them to the router structure for faster access.
-       for (dtRT->dit = dtRT->rows.begin(); dtRT->dit != dtRT->rows.end(); dtRT->dit++){
-           i = StringToInt(dtRT->GetItem(dtRT->dit->first, fld_RID));        // get the index of the entry in the table.
-           NewEntry.srcDevDes = dtRT->GetItem(dtRT->dit->first, fld_Source);
-           NewEntry.dstDevDes = dtRT->GetItem(dtRT->dit->first, fld_Dest);
-           NewEntry.lowerID = dtRT->GetIntItem(dtRT->dit->first, fld_LowID);
-           NewEntry.upperID = dtRT->GetIntItem(dtRT->dit->first, fld_UpID);
-           NewEntry.format = DataRouter.ToMsgFormat(dtRT->GetItem(dtRT->dit->first, fld_Protocl));
+    RouteRepository repo(&db);
+    RouteTableAdapter adapter(&repo);
 
-           DataRouter.AddRoute(NewEntry);  // add the new entry to the route table
+    if (!adapter.Load())
+    {
+        cout << "BuildRouteTable route load failed: "
+             << db.LastError() << endl;
+        return -1;
+    }
 
-      }
-   return 0;   
+    for (int i = 0; i < adapter.RowCount(); i++)
+    {
+        routeEntry NewEntry;
+
+        NewEntry.srcDevDes = adapter.GetString(i, 1);
+        NewEntry.dstDevDes = adapter.GetString(i, 2);
+        NewEntry.lowerID = adapter.GetInt(i, 3);
+        NewEntry.upperID = adapter.GetInt(i, 4);
+        NewEntry.format = DataRouter.ToMsgFormat(adapter.GetString(i, 5));
+
+        DataRouter.AddRoute(NewEntry);
+    }
+
+    return adapter.RowCount();
 }
-
 int BuildWNATtable(void ){
 
     int baseid, portcount, defaultport;
@@ -307,23 +330,24 @@ int BuildWNATtable(void ){
     return i;
 }
 
-int BuildPagerTable(void){
+int BuildPagerTable(void)
+{
     int pagersLoaded = 0;
-    
+
     Pagers.ClearAll();
-    
-    // Move everything in the database to memory
-    for (dtPagers->dit = dtPagers->rows.begin(); dtPagers->dit != dtPagers->rows.end(); dtPagers->dit++){
-        PagerTableEntry entry;
-        entry.pagerNumber = dtPagers->GetIntItem(dtPagers->dit->first, pagerNumberColumn);
-        entry.pageDataType = dtPagers->GetItem(dtPagers->dit->first, pageDataTypeColumn);
-        entry.capCode = dtPagers->GetIntItem(dtPagers->dit->first, capCodeColumn);
-        entry.otaProtocol = dtPagers->GetItem(dtPagers->dit->first, otaProtocolColumn);
-        entry.isGroup = dtPagers->GetBoolItem(dtPagers->dit->first, isGroupColumn, false);
-        entry.isActive = dtPagers->GetBoolItem(dtPagers->dit->first, isActiveColumn, false);
-        
-        Pagers.AddPager(entry);
-        
+
+    PagerRepository repo(myDB.dbManager.Database());
+    std::vector<PagerTableEntry> entries;
+
+    if (!repo.LoadEntries(entries))
+    {
+        cout << "Failed to load pagers through PagerRepository." << endl;
+        return -1;
+    }
+
+    for (int i = 0; i < (int)entries.size(); i++)
+    {
+        Pagers.AddPager(entries[i]);
         pagersLoaded++;
     }
 
@@ -462,10 +486,10 @@ bool LoadTablesFromDB(database* aDB){
 
 
        // The RoutesTable route table. dtRT
-       dtRT = new datatable(RoutesTable, fld_RID);      // Create the table to hold info about our WDs. Index is ID.
-       dtRT->AutoAddRows = aDB->AutoAddRows;            // use the default autoadd setting for this table
-       myDB.LoadTable(dtRT);                            // load the table data from the database. Also loads field definitions
-       dtRT->parentdb = aDB;
+       //dtRT = new datatable(RoutesTable, fld_RID);      // Create the table to hold info about our WDs. Index is ID.
+       //dtRT->AutoAddRows = aDB->AutoAddRows;            // use the default autoadd setting for this table
+       //myDB.LoadTable(dtRT);                            // load the table data from the database. Also loads field definitions
+       //dtRT->parentdb = aDB;
 
        // The ETHx devicedesignator table listing all devices this gatway commnunicates with
        dtEDD = new datatable(EthDevDesTable, fld_designator);     // Create the table to hold info about our routed protocols

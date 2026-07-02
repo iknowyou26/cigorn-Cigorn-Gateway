@@ -353,7 +353,7 @@ int main(int argc, char *argv[],char *envp[] )
        if (myDB.ConnectionOK){
            ss << "Connected OK to DataBase:" << dbName << endl;
            cout << "Connected OK to DataBase:" << dbName << "\r\n";
-//TestWirelessNatRepository();
+//TestRouteTableAdapter();
        }
        else{
            ss << "Failed to connect to DataBase:" << dbName << endl;
@@ -371,7 +371,8 @@ int main(int argc, char *argv[],char *envp[] )
        LoadTablesFromDB(&myDB);
 
        ss << "Initialized table: " << dtWD->tablename << ". " << dtWD->rows.size() << " rows." << endl;
-       ss << "Initialized table: " << dtRT->tablename << ". " << dtRT->rows.size() << " rows." << endl;
+       ss << "Initialized route repository." << endl;
+       //ss << "Initialized table: " << dtRT->tablename << ". " << dtRT->rows.size() << " rows." << endl;
        //ss << "Initialized table: " << dtPR->tablename << ". " << dtPR->rows.size() << " rows." << endl;
        ss << "Initialized table: " << dtEDD->tablename << ". " << dtEDD->rows.size() << " rows." << endl;
        ss << "Initialized table: " << dtTDD->tablename << ". " << dtTDD->rows.size() << " rows." << endl;
@@ -620,7 +621,7 @@ int main(int argc, char *argv[],char *envp[] )
   sleep(2);             // wait while other tasks get killed.
   
   delete dtWD;          // remove the tables from the heap
-  delete dtRT;
+//  delete dtRT;
 //  delete dtPR;
 
   sleep(2);
