@@ -40,7 +40,7 @@ using namespace std;
 #include <signal.h>
 #include "Test1.h"
 #include "Security.h"
-extern int TestRepositoryManager();
+
 // Local prototypes
 char *entry, letter, choice[2];
 int ascii, len, binary[8], total;
@@ -353,7 +353,7 @@ int main(int argc, char *argv[],char *envp[] )
        if (myDB.ConnectionOK){
            ss << "Connected OK to DataBase:" << dbName << endl;
            cout << "Connected OK to DataBase:" << dbName << "\r\n";
-TestRepositoryManager();
+//TestEthDeviceTableAdapter();
        }
        else{
            ss << "Failed to connect to DataBase:" << dbName << endl;
