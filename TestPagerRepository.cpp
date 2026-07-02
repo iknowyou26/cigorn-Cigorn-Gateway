@@ -1,0 +1,43 @@
+#include "PostgresDatabase.h"
+#include "DBResult.h"
+#include "repositories/PagerRepository.h"
+#include <iostream>
+#include "Cigorn.h"
+int TestPagerRepository()
+{
+    PostgresDatabase db;
+    DBResult result;
+
+    if (!db.Connect(myDB.LastConnInfo))
+    {
+        std::cout << "PagerRepository DB connect failed: "
+                  << db.LastError() << std::endl;
+        return -1;
+    }
+    
+    PagerRepository repo(&db);
+    std::vector<PagerTableEntry> entries;
+
+if (!repo.LoadEntries(entries))
+{
+    std::cout << "PagerRepository LoadEntries failed: "
+              << db.LastError() << std::endl;
+    return -1;
+}
+
+std::cout << "PagerRepository loaded entries: "
+          << entries.size()
+          << std::endl;
+    if (!repo.LoadAll(result))
+    {
+        std::cout << "PagerRepository LoadAll failed: "
+                  << db.LastError() << std::endl;
+        return -1;
+    }
+
+    std::cout << "PagerRepository loaded "
+              << result.RowCount()
+              << " pager rows." << std::endl;
+
+    return result.RowCount();
+}

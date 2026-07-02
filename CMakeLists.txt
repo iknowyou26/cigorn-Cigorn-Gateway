@@ -14,13 +14,14 @@ include_directories(
     ./tinyxml
     /usr/include/postgresql
 )
-
 file(GLOB CIGORN_CPP "*.cpp")
+file(GLOB REPOSITORY_CPP "repositories/*.cpp")
 file(GLOB TINYXML_CPP "tinyxml/*.cpp")
 file(GLOB POLARSSL_C "polarssl/*.c")
 
 add_executable(cigorn
     ${CIGORN_CPP}
+    ${REPOSITORY_CPP}
     ${TINYXML_CPP}
     ${POLARSSL_C}
 )
@@ -30,3 +31,4 @@ target_link_libraries(cigorn
     crypt
     pthread
 )
+

@@ -1,4 +1,4 @@
-/********************************************************/
+/*********************************extern int TestDeviceRepository();***********************/
 // RaveonNet.cpp
 //
 //
@@ -45,6 +45,7 @@ using namespace std;
 char *entry, letter, choice[2];
 int ascii, len, binary[8], total;
 int our_second = 0;
+
 Gateway Me;                        // the settings for this gateway
 map<string, Gateway> GateWays;     // The list of all other gateways we know about
 
@@ -352,6 +353,7 @@ int main(int argc, char *argv[],char *envp[] )
        if (myDB.ConnectionOK){
            ss << "Connected OK to DataBase:" << dbName << endl;
            cout << "Connected OK to DataBase:" << dbName << "\r\n";
+//TestWirelessNatRepository();
        }
        else{
            ss << "Failed to connect to DataBase:" << dbName << endl;
@@ -375,7 +377,7 @@ int main(int argc, char *argv[],char *envp[] )
        ss << "Initialized table: " << dtTDD->tablename << ". " << dtTDD->rows.size() << " rows." << endl;
        ss << "Initialized table: " << dtWNAT->tablename << ". " << dtWNAT->rows.size() << " rows." << endl;
        ss << "Initialized table: " << dtPagers->tablename << ". " << dtPagers->rows.size() << " rows." << endl;
-
+       ss << "Initialized pager repository." << endl;
        myDB.lastUpdate = LocalTimeStamp();
 
        // Now copy the SQL route table over to the the router table structure
