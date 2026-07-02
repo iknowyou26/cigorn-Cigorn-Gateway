@@ -353,7 +353,7 @@ int main(int argc, char *argv[],char *envp[] )
        if (myDB.ConnectionOK){
            ss << "Connected OK to DataBase:" << dbName << endl;
            cout << "Connected OK to DataBase:" << dbName << "\r\n";
-//TestTtyDeviceTableAdapter();
+//TestPagerTableAdapter();
        }
        else{
            ss << "Failed to connect to DataBase:" << dbName << endl;
