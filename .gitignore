@@ -52,3 +52,11 @@ tablename
 rows[indexval]
 second.rowstate
 dit-
+*.zip
+*.tar.gz
+*.bundle
+CMakeLists.txt.*-ok
+AutoAddRows
+IndexCol
+colname[i]
+rows[indexval]
