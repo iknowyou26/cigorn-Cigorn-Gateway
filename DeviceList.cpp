@@ -1329,6 +1329,22 @@ bool  DeviceList::LoadEthDevDesTable(datatable* dt){
 // ***********************************************************************
 // Parse the device designator table and add devicedesigntators as needed
 // ***********************************************************************
+//bool LoadTtyDevDesTable(TtyDeviceTableAdapter* adapter);
+bool DeviceList::LoadTtyDevDesTable(TtyDeviceTableAdapter* adapter)
+{
+    if (adapter == NULL)
+        return false;
+
+    if (!adapter->Load())
+        return false;
+
+    // temporary safe version:
+    cout << "TtyDeviceTableAdapter runtime loaded "
+         << adapter->RowCount()
+         << " tty device rows." << endl;
+
+    return true;
+}
 bool  DeviceList::LoadTtyDevDesTable(datatable* dt){
     stringstream ssout;
 
@@ -1407,3 +1423,4 @@ bool  DeviceList::LoadTtyDevDesTable(datatable* dt){
 
 }
 
+//bool LoadTtyDevDesTable(TtyDeviceTableAdapter* adapter);
