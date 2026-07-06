@@ -27,6 +27,8 @@
 #include "PostgresDatabase.h"
 #include "RepositoryManager.h"
 #include "adapters/EthDeviceTableAdapter.h"
+#include "adapters/WirelessNatTableAdapter.h"
+
 using namespace std;
 
 void SendStatusEmail(emailer* pmailer, string notice){
@@ -294,44 +296,66 @@ int BuildRouteTable(void)
 
     return adapter.RowCount();
 }
-int BuildWNATtable(void ){
-
-    int baseid, portcount, defaultport;
-    string Designator="";
+int BuildWNATtable(void)
+{
+    int baseid, portcount;
+    string Designator = "";
     string comment = "";
     string DefDevDes = "";
     stringstream ss;
 
-    int i=0;
-
     WNAT.ClearAll();
-    
-   // loop through the entries in the route table, and copy them to the router structure for faster access.
-   for (dtWNAT->dit = dtWNAT->rows.begin(); dtWNAT->dit != dtWNAT->rows.end(); dtWNAT->dit++){
-       i=i++;
-       Designator = dtWNAT->GetItem(dtWNAT->dit->first, fld_wnat_devdes);
-       baseid = dtWNAT->GetIntItem(dtWNAT->dit->first, fld_wnat_baseid);
-       DefDevDes = dtWNAT->GetItem(dtWNAT->dit->first, fld_wnat_defaultdes);
-       portcount = dtWNAT->GetIntItem(dtWNAT->dit->first, fld_wnat_portcount);
-       comment = dtWNAT->GetItem(dtWNAT->dit->first, fld_wnat_comment);
 
-       if ((portcount>0) && (Designator.size()>0) && (baseid>0) ){
-           WNAT.AddWNAT(Designator, portcount ,baseid, DefDevDes, comment);
-           CoutM1(ss)  << "Read WNAT entry " << Designator << " IDs"  << baseid << "-" << (baseid + portcount) << endl;
-       }else{
-           ss << "Error 075. WNAT Entry Invalid. " << Designator << " " << " IDs"  << baseid << "-" << (baseid + portcount) << endl;
-           elog.store(("Error 075. WNAT Entry Invalid" + Designator));
-       }
-  }
+    PostgresDatabase db;
 
-    if (ss.str().size() > 0 ){
+    if (!db.Connect(myDB.LastConnInfo))
+    {
+        cout << "BuildWNATtable DB connect failed: "
+             << db.LastError() << endl;
+        return -1;
+    }
+
+    RepositoryManager repos(&db);
+    WirelessNatTableAdapter adapter(&repos.WirelessNat());
+
+    if (!adapter.Load())
+    {
+        cout << "BuildWNATtable WNAT load failed: "
+             << db.LastError() << endl;
+        return -1;
+    }
+
+    for (int i = 0; i < adapter.RowCount(); i++)
+    {
+        Designator = adapter.GetString(i, 0);
+        baseid = adapter.GetInt(i, 1);
+        DefDevDes = adapter.GetString(i, 2);
+        portcount = adapter.GetInt(i, 3);
+        comment = adapter.GetString(i, 4);
+
+        if ((portcount > 0) && (Designator.size() > 0) && (baseid > 0))
+        {
+            WNAT.AddWNAT(Designator, portcount, baseid, DefDevDes, comment);
+            CoutM1(ss) << "Read WNAT entry " << Designator << " IDs"
+                       << baseid << "-" << (baseid + portcount) << endl;
+        }
+        else
+        {
+            ss << "Error 075. WNAT Entry Invalid. "
+               << Designator << " IDs"
+               << baseid << "-" << (baseid + portcount) << endl;
+            elog.store(("Error 075. WNAT Entry Invalid" + Designator));
+        }
+    }
+
+    if (ss.str().size() > 0)
+    {
         MyCLI.OutputText(ss.str());
         ss.str("");
     }
 
-    return i;
+    return adapter.RowCount();
 }
-
 int BuildPagerTable(void)
 {
     int pagersLoaded = 0;
