@@ -25,6 +25,8 @@
 #include "repositories/RouteRepository.h"
 #include "adapters/RouteTableAdapter.h"
 #include "PostgresDatabase.h"
+#include "RepositoryManager.h"
+#include "adapters/EthDeviceTableAdapter.h"
 using namespace std;
 
 void SendStatusEmail(emailer* pmailer, string notice){
@@ -472,7 +474,20 @@ bool ChangeConfigSetting(const string& idxfld, const string&  idxval, const stri
 
 // Load the routing and designator tables from a particular database
 bool LoadTablesFromDB(database* aDB){
+       PostgresDatabase ethDb;
 
+if (ethDb.Connect(myDB.LastConnInfo))
+{
+    RepositoryManager repos(&ethDb);
+    EthDeviceTableAdapter ethAdapter(&repos.EthDevices());
+
+    if (ethAdapter.Load())
+    {
+        cout << "EthDeviceTableAdapter startup loaded "
+             << ethAdapter.RowCount()
+             << " ethernet device rows." << endl;
+    }
+}
        // create the data table objects that will hold the records from the SQL database
        dtWD = new datatable(WDEVICE, fld_ID);    // Create the table to hold info about our WDs. Index is ID.
        dtWD->AutoAddRows = myDB.AutoAddRows;     // use the default autoadd setting for this table
