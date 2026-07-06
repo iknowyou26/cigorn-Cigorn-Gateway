@@ -15,7 +15,7 @@
 #include "piper.h"
 #include "TCPsocket.h"
 #include "datatable.h"
-
+#include "adapters/EthDeviceTableAdapter.h"
 // dTypes are the device types. These are devices connected to a port on the gateway.
 #define dNONE              0   // No device
 #define dDataModem         1   // RV-M7, without GPS
@@ -104,6 +104,7 @@ public:
     int getPortNum(int);          // get the PORT number this device designator used
     bool  LoadEthDevDesTable(datatable* );
     bool  LoadTtyDevDesTable(datatable* );
+    bool  LoadEthDevDesTable(EthDeviceTableAdapter* );
     double HoursSinceTtyMsg(void);
     double HoursSinceEthMsg(void);
     void ResetStatistics(void);

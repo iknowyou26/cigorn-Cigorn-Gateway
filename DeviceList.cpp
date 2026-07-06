@@ -544,7 +544,136 @@ bool DeviceList::IsEth(int i){
     return false;
 
 }
+bool DeviceList::LoadEthDevDesTable(EthDeviceTableAdapter* adapter)
+{
+    if (adapter == NULL)
+        return false;
 
+    if (!adapter->Load())
+        return false;
+
+    int  DevIndex = -1;
+    int  rfp = -1;
+    bool success = false;
+    int didit = true;
+    string dtype = "";
+    string devdes = "";
+    string intf = "";
+    string ipadd = "";
+    string protocol = "";
+    string parm1 = "";
+    bool tcp_keepalive = false;
+    int ClientTimeout = 0;
+    int pnum, i, dtypeindex;
+    stringstream ss;
+    string emessage = "";
+    int pcount, port;
+
+    ErrorsLoading = 0;
+    LoadCount = 0;
+
+    for (i = 0; i < adapter->RowCount(); i++)
+    {
+        success = false;
+        didit = true;
+
+        devdes = adapter->GetString(i, 0);
+        if (devdes.size() > 0)
+        {
+            intf = adapter->GetString(i, 2);
+            dtype = adapter->GetString(i, 1);
+            dtypeindex = DeviceTypeIndex(dtype);
+
+            if ((dtypeindex == dDataModem) || (dtypeindex == dWMXmodem))
+            {
+                rfp = adapter->GetInt(i, 3);
+                DevIndex = AddRadioChannel(devdes, rfp, dtype, intf, pnum, protocol);
+                if (DevIndex == -1)
+                {
+                    emessage = "Error: RF Channel number " + intToString(rfp) + " already assigned to" + devdes;
+                    elog.store(emessage);
+                    CoutM2(ss) << emessage << endl;
+                }
+            }
+            else
+            {
+                DevIndex = AddConnection(dtype, intf, devdes);
+            }
+
+            if (DevIndex >= 0)
+            {
+                pnum = adapter->GetInt(i, 4);
+                pcount = adapter->GetInt(i, 6);
+                ipadd = adapter->GetString(i, 7);
+                protocol = adapter->GetString(i, 8);
+                parm1 = adapter->GetString(i, 10);
+                OurDevices.descriptions[DevIndex] = adapter->GetString(i, 9);
+
+                if (pcount < 1)
+                    pcount = 1;
+
+                port = pnum;
+
+                if (parm1.size() > 0)
+                {
+                    ClientTimeout = StringToInt(parm1);
+                    tcp_keepalive = (StringToInt(parm1) < 0);
+                }
+                else
+                {
+                    ClientTimeout = 0;
+                    tcp_keepalive = false;
+                }
+
+                while ((pcount > 0) && didit)
+                {
+                    if (InterfaceExists(intf))
+                    {
+                        didit = ConnectDeviceSocket(DevIndex, intf, port, protocol, ipadd, ClientTimeout, tcp_keepalive);
+
+                        if (didit != true)
+                        {
+                            CoutM2(ss) << "Error 392. Failed to create socket for:" << devdes
+                                       << " port " << port << " on " << intf << " EC=" << didit << endl;
+                            elog.store(string("Error 392. Failed to create socket for:" + devdes + " Port:" + intToString(port)));
+                            ErrorsLoading++;
+                        }
+                        else
+                        {
+                            CoutM2(ss) << "New eth DeviceDesignator socket:" << devdes << " " << intf << " port:" << port << endl;
+                            LoadCount++;
+                        }
+                    }
+                    else
+                    {
+                        CoutM2(ss) << "Error 393. Invalid eth interface for device designator:" << devdes << " on " << intf << endl;
+                        elog.store(string("Error 393. Invalid eth interface for device designator:" + devdes));
+                        ErrorsLoading++;
+                    }
+
+                    pcount--;
+                    port++;
+                }
+
+                success = true;
+            }
+        }
+
+        if (!success)
+        {
+            ss << "Failed to add New DeviceDesignator " << devdes << ". " << emessage << endl;
+            elog.store(string("Failed to add devicedesignator:" + devdes));
+        }
+    }
+
+    if (ss.str().size() > 0)
+    {
+        MyCLI.OutputText(ss.str());
+        ss.str("");
+    }
+
+    return success;
+}
 // return true if this devDesignator is an ethernet interface
 bool DeviceList::IsTTY(int i){
 
