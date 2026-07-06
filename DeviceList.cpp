@@ -1338,12 +1338,90 @@ bool DeviceList::LoadTtyDevDesTable(TtyDeviceTableAdapter* adapter)
     if (!adapter->Load())
         return false;
 
-    // temporary safe version:
-    cout << "TtyDeviceTableAdapter runtime loaded "
-         << adapter->RowCount()
-         << " tty device rows." << endl;
+    stringstream ssout;
+    int DevIndex;
+    int rfp = -1;
+    bool success = false;
+    string dtype;
+    string devdes;
+    string intf;
+    string settings;
+    string protocol;
+    int pnum = 0;
+    int baudrate;
+    int dtypeindex;
 
-    return true;
+    ErrorsLoading = 0;
+    LoadCount = 0;
+
+    for (int i = 0; i < adapter->RowCount(); i++)
+    {
+        success = false;
+
+        devdes = adapter->GetString(i, 0);
+
+        if (IsDesignator(devdes) == false)
+        {
+            if (devdes.size() > 0)
+            {
+                intf = adapter->GetString(i, 2);
+
+                if (IsTTY(intf))
+                {
+                    dtype = adapter->GetString(i, 1);
+                    dtypeindex = DeviceTypeIndex(dtype);
+                    rfp = adapter->GetInt(i, 3);
+
+                    if ((dtypeindex == dDataModem) || (dtypeindex == dWMXmodem))
+                        DevIndex = AddRadioChannel(devdes, rfp, dtype, intf, pnum, protocol);
+                    else
+                        DevIndex = AddConnection(dtype, intf, devdes);
+
+                    if (DevIndex >= 0)
+                    {
+                        settings = adapter->GetString(i, 4);
+                        baudrate = adapter->GetInt(i, 5);
+                        OurDevices.descriptions[DevIndex] = adapter->GetString(i, 6);
+
+                        if (ConnectTTYdevice(DevIndex, intf, baudrate, settings))
+                        {
+                            CoutM2(ssout) << "New TTY DeviceDesignator:" << devdes << " "
+                                          << dtype << " on " << intf
+                                          << " baud:" << baudrate << " "
+                                          << settings << endl;
+                            success = true;
+                            LoadCount++;
+                        }
+                    }
+                    else
+                    {
+                        CoutM2(ssout) << "Error 922: Cannot add new DeviceDesignator" << devdes << endl;
+                        elog.store(string("Error 922: Cannot add new DeviceDesignator:" + devdes));
+                    }
+                }
+
+                if (!success)
+                {
+                    CoutM2(ssout) << "Failed to add New DeviceDesignator:" << devdes << endl;
+                    elog.store(string("Error. Failed to add DeviceDesignator:" + devdes));
+                    ErrorsLoading++;
+                }
+            }
+        }
+        else
+        {
+            CoutM2(ssout) << "Failed to add New DeviceDesignator:" << devdes << "(Duplicate)" << endl;
+            elog.store(string("Error. Failed to add DeviceDesignator:" + devdes + "(Duplicate)"));
+        }
+    }
+
+    if (ssout.str().size() > 0)
+    {
+        MyCLI.OutputText(ssout.str());
+        ssout.str("");
+    }
+
+    return success;
 }
 bool  DeviceList::LoadTtyDevDesTable(datatable* dt){
     stringstream ssout;
