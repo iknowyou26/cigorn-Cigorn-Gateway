@@ -39,7 +39,7 @@
 
 #define APP_TITLE  "Cigorn Gateway"
 
-#define REV_MAJOR  4
+#define REV_MAJOR  5
 #define REV_MINOR  0
 #define REV_BUILD  1
 

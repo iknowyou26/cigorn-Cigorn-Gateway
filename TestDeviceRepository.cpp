@@ -17,7 +17,7 @@ int TestDeviceRepository()
         return -1;
     }
 
-    DeviceRepository repo(db);
+    DeviceRepository repo(&db);
 
     if (!repo.Load())
     {

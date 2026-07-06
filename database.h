@@ -13,7 +13,7 @@
 #include <queue>
 #include <string>
 #include <map>
-#include "/usr/include/postgresql/libpq-fe.h"
+#include "DatabaseManager.h"
 #include "datarow.h"
 
 using namespace std;
@@ -80,8 +80,8 @@ public:
     string lastUpdate;
     int rowsadded;
     int rowsdeleted;
-
-    PGconn *conn;  // our connection to the dbase
+    string LastConnInfo;
+    DatabaseManager dbManager;  // our connection to the dbase
 
 private:
 
