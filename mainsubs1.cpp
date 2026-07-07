@@ -508,18 +508,19 @@ bool ChangeConfigSetting(const string& idxfld, const string&  idxval, const stri
 bool LoadTablesFromDB(database* aDB){
        PostgresDatabase ethDb;
 
-if (ethDb.Connect(myDB.LastConnInfo))
-{
+     if (ethDb.Connect(myDB.LastConnInfo))
+    {
     RepositoryManager repos(&ethDb);
     EthDeviceTableAdapter ethAdapter(&repos.EthDevices());
 
-    if (ethAdapter.Load())
-    {
-        cout << "EthDeviceTableAdapter startup loaded "
-             << ethAdapter.RowCount()
-             << " ethernet device rows." << endl;
-    }
-}
+    //if (ethAdapter.Load())
+    //{
+        //cout << "EthDeviceTableAdapter startup loaded "
+             //<< ethAdapter.RowCount()
+             //<< " ethernet device rows." << endl;
+    //}
+     
+      }
        // create the data table objects that will hold the records from the SQL database
        dtWD = new datatable(WDEVICE, fld_ID);    // Create the table to hold info about our WDs. Index is ID.
        dtWD->AutoAddRows = myDB.AutoAddRows;     // use the default autoadd setting for this table
@@ -563,7 +564,7 @@ if (ethDb.Connect(myDB.LastConnInfo))
        dtPagers->parentdb = aDB;
 
        return true;
-}
+       }
 
 // Load the
 bool LoadTable(database* aDB, datatable *dtDTB, string TableName){
