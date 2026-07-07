@@ -374,10 +374,14 @@ int main(int argc, char *argv[],char *envp[] )
        ss << "Initialized route repository." << endl;
        //ss << "Initialized table: " << dtRT->tablename << ". " << dtRT->rows.size() << " rows." << endl;
        //ss << "Initialized table: " << dtPR->tablename << ". " << dtPR->rows.size() << " rows." << endl;
-       ss << "Initialized table: " << dtEDD->tablename << ". " << dtEDD->rows.size() << " rows." << endl;
-       ss << "Initialized table: " << dtTDD->tablename << ". " << dtTDD->rows.size() << " rows." << endl;
-       ss << "Initialized table: " << dtWNAT->tablename << ". " << dtWNAT->rows.size() << " rows." << endl;
-       ss << "Initialized table: " << dtPagers->tablename << ". " << dtPagers->rows.size() << " rows." << endl;
+       //ss << "Initialized table: " << dtEDD->tablename << ". " << dtEDD->rows.size() << " rows." << endl;
+       //ss << "Initialized table: " << dtTDD->tablename << ". " << dtTDD->rows.size() << " rows." << endl;
+       //ss << "Initialized table: " << dtWNAT->tablename << ". " << dtWNAT->rows.size() << " rows." << endl;
+       //ss << "Initialized table: " << dtPagers->tablename << ". " << dtPagers->rows.size() << " rows." << endl;
+       ss << "Initialized EthDevice repository/adapter." << endl;
+       ss << "Initialized TtyDevice repository/adapter." << endl;
+       ss << "Initialized WirelessNat repository/adapter." << endl;
+       ss << "Initialized Pager repository/adapter." << endl;
        ss << "Initialized pager repository." << endl;
        myDB.lastUpdate = LocalTimeStamp();
 
