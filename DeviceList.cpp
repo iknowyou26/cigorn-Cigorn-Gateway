@@ -602,12 +602,12 @@ bool DeviceList::LoadEthDevDesTable(EthDeviceTableAdapter* adapter)
 
             if (DevIndex >= 0)
             {
-                pnum = adapter->GetInt(i, 4);
-                pcount = adapter->GetInt(i, 6);
-                ipadd = adapter->GetString(i, 7);
-                protocol = adapter->GetString(i, 8);
-                parm1 = adapter->GetString(i, 10);
-                OurDevices.descriptions[DevIndex] = adapter->GetString(i, 9);
+                pnum = adapter->GetInt(i, 3);
+		ipadd = adapter->GetString(i, 4);
+		protocol = adapter->GetString(i, 5);
+		parm1 = adapter->GetString(i, 6);
+		OurDevices.descriptions[DevIndex] = adapter->GetString(i, 8);
+		pcount = adapter->GetInt(i, 9);
 
                 if (pcount < 1)
                     pcount = 1;
