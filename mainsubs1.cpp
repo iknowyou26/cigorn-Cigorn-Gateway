@@ -362,15 +362,23 @@ int BuildPagerTable(void)
 
     Pagers.ClearAll();
 
-    PagerRepository repo(myDB.dbManager.Database());
+    //PagerRepository repo(myDB.dbManager.Database());
+    //std::vector<PagerTableEntry> entries;
+
+    //if (!repo.LoadEntries(entries))
+    //{
+        //cout << "Failed to load pagers through PagerRepository." << endl;
+        //return -1;
+    //}
+    RepositoryManager repos(myDB.dbManager.Database());
+
     std::vector<PagerTableEntry> entries;
 
-    if (!repo.LoadEntries(entries))
-    {
-        cout << "Failed to load pagers through PagerRepository." << endl;
-        return -1;
-    }
-
+   if (!repos.Pagers().LoadEntries(entries))
+   {
+    	cout << "Failed to load pagers through PagerRepository." << endl;
+   	 return -1;
+   }
     for (int i = 0; i < (int)entries.size(); i++)
     {
         Pagers.AddPager(entries[i]);
