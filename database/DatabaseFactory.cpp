@@ -1,5 +1,5 @@
 #include "DatabaseFactory.h"
-#include "postgres/PostgresDatabase.h"
+#include "../PostgresDatabase.h"
 #include "sqlserver/SQLServerDatabase.h"
 
 IDatabase* DatabaseFactory::Create(DatabaseType type)

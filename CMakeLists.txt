@@ -20,6 +20,8 @@ file(GLOB TINYXML_CPP "tinyxml/*.cpp")
 file(GLOB POLARSSL_C "polarssl/*.c")
 file(GLOB ADAPTER_CPP "adapters/*.cpp")
 add_executable(cigorn
+    database/DatabaseFactory.cpp
+    database/sqlserver/SQLServerDatabase.cpp
     ${CIGORN_CPP}
     ${REPOSITORY_CPP}
     ${TINYXML_CPP}

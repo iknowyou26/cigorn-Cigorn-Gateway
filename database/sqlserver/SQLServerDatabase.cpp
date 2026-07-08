@@ -1,30 +1,31 @@
 #include "SQLServerDatabase.h"
 
-SQLServerDatabase::SQLServerDatabase()
+SQLServerDatabase::SQLServerDatabase() {}
+SQLServerDatabase::~SQLServerDatabase() {}
+
+bool SQLServerDatabase::Connect(const std::string& connInfo)
 {
+    lastError = "SQL Server backend not implemented yet";
+    return false;
 }
 
-SQLServerDatabase::~SQLServerDatabase()
+void SQLServerDatabase::Disconnect()
 {
-}
-
-bool SQLServerDatabase::Connect()
-{
-    return false;     // TODO: ODBC connection
-}
-
-bool SQLServerDatabase::Disconnect()
-{
-    return true;
-}
-
-DBResult SQLServerDatabase::Query(const std::string& sql)
-{
-    DBResult result;
-    return result;
 }
 
 bool SQLServerDatabase::Execute(const std::string& sql)
 {
+    lastError = "SQL Server Execute not implemented yet";
     return false;
+}
+
+bool SQLServerDatabase::Query(const std::string& sql, DBResult& result)
+{
+    lastError = "SQL Server Query not implemented yet";
+    return false;
+}
+
+std::string SQLServerDatabase::LastError() const
+{
+    return lastError;
 }

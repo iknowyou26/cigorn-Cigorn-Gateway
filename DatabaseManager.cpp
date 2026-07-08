@@ -1,9 +1,9 @@
 #include "DatabaseManager.h"
-#include "PostgresDatabase.h"
-
+//#include "PostgresDatabase.h"
+#include "database/DatabaseFactory.h"
 DatabaseManager::DatabaseManager()
 {
-    db = new PostgresDatabase();
+    db = DatabaseFactory::Create(DatabaseType::PostgreSQL);
 }
 
 DatabaseManager::~DatabaseManager()
