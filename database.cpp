@@ -4,7 +4,7 @@
  * 
  * Created on September 14, 2010, 1:24 AM
  */
-#include "PostgresDatabase.h"
+#include "database/DatabaseFactory.h"
 #include "DBResult.h"
 #include "database.h"
 #include "Cigorn.h"     // Our application-specific constants and headers
@@ -106,17 +106,17 @@ int database::GetTypes(void)
 
     query = "select OID, typname from pg_type;";
 
-    PostgresDatabase dal;
-    if (!dal.Connect(LastConnInfo))
+    IDatabase* dal = DatabaseFactory::Create(DatabaseType::PostgreSQL);
+    if (!dal->Connect(LastConnInfo))
 {
-    cout << "DAL connect failed. " << dal.LastError() << "\r\n";
+    cout << "DAL connect failed. " << dal->LastError() << "\r\n";
     cout << "DAL connection string:" << LastConnInfo << "\r\n";
     return -1;
 }
 
-if (!dal.Query(query, result))
+if (!dal->Query(query, result))
     {
-        cout << "Can't query DB types through DAL. " << dal.LastError() << "\r\n";
+        cout << "Can't query DB types through DAL. " << dal->LastError() << "\r\n";
         return -1;
     }
 
@@ -130,6 +130,7 @@ if (!dal.Query(query, result))
     }
 
     return result.RowCount();
+	
 }
 
 int database::LoadTable(datatable* dt){
@@ -148,27 +149,30 @@ int database::LoadTable(datatable* dt){
       return -1;
 
   if (ConnectionOK == false)
+	
       return -1;
-
+	
   query = "select * from " + tablename + ";";
 
   //cout << query << endl;
  
   // Fetch all rows from the data table
-  PostgresDatabase dal;
-
-if (!dal.Connect(LastConnInfo))
+  //PostgresDatabase dal;
+    IDatabase* dal = DatabaseFactory::Create(DatabaseType::PostgreSQL);
+if (!dal->Connect(LastConnInfo))
 {
     cout << "DAL connect failed loading table: " << tablename << "\r\n";
-    cout << dal.LastError() << "\r\n";
+    cout << dal->LastError() << "\r\n";
+	delete dal;
     return -1;
+	
 }
 
-if (!dal.Query(query, result))
+if (!dal->Query(query, result))
 {
     cout << "Error 489. Failed to load table: " << tablename << "\r\n";
     cout << "Query: " << query << "\r\n";
-    cout << dal.LastError() << "\r\n";
+    cout << dal->LastError() << "\r\n";
     elog.store("Error 489. Failed to Load table: " + tablename);
     return -1;
 }
@@ -182,7 +186,8 @@ if (!dal.Query(query, result))
     if (nFields <= 0){
       
       return -1;  // no columns
-    }
+	delete dal;    
+}
 
     // Build up the list of field/column names
     for (i = 0; i < nFields; i++){
@@ -249,7 +254,7 @@ if (!dal.Query(query, result))
     // Clear result
     
     return nrows;
-
+	
 }
 
     
@@ -257,11 +262,11 @@ if (!dal.Query(query, result))
 int database::PushUpdatesToDB(datatable* dt){
   
   #define MAXCOL 20
-  PostgresDatabase dal;
+  IDatabase* dal = DatabaseFactory::Create(DatabaseType::PostgreSQL);
 
-if (!dal.Connect(LastConnInfo))
+if (!dal->Connect(LastConnInfo))
 {
-    cout << "DAL connect failed in PushUpdatesToDB. " << dal.LastError() << "\r\n";
+    cout << "DAL connect failed in PushUpdatesToDB. " << dal->LastError() << "\r\n";
     return -1;
 }        // results of a query
   string query = "";
@@ -299,9 +304,9 @@ if (!dal.Connect(LastConnInfo))
             query = "INSERT INTO " + dt->tablename + " VALUES(" +values + ");";
             rowsupdated++;
             rowsadded++;
-            if (!dal.Execute(query))
+            if (!dal->Execute(query))
 {
-    CoutM2(ss) << "Error adding WD. " << dal.LastError() << endl;
+    CoutM2(ss) << "Error adding WD. " << dal->LastError() << endl;
 }
 else
 {
@@ -351,9 +356,9 @@ else
                             FormatForSQL(dt->dit->second.col[indexcol], dt->type[indexcol]) + ";";
                     rowsupdated++;
                     // cout << query << endl;
-                    if (!dal.Execute(query))
+                    if (!dal->Execute(query))
 {
-    cout << dal.LastError() << "\r\n";
+    cout << dal->LastError() << "\r\n";
 }  // Clear result
               }
           }// if row is modified
@@ -408,7 +413,7 @@ else
          ss.str("");                   // clear the buffer
    }
    return rowsupdated;
-
+	delete dal;
 }
 
 
@@ -417,7 +422,7 @@ else
 int database::StoreTableToDB(datatable* dt){
 
   #define MAXCOL 20
-  PostgresDatabase dal;       // results of a query
+  IDatabase* dal = DatabaseFactory::Create(DatabaseType::PostgreSQL);       // results of a query
   string query = "";
   string values = "";
   int rowsupdated = 0;
@@ -425,19 +430,20 @@ int database::StoreTableToDB(datatable* dt){
   stringstream sss;
   
 
-  if (!dal.Connect(LastConnInfo))
+  if (!dal->Connect(LastConnInfo))
 {
-    CoutM2(sss) << "DAL connect failed in StoreTableToDB. " << dal.LastError() << endl;
+    CoutM2(sss) << "DAL connect failed in StoreTableToDB. " << dal->LastError() << endl;
     return -1;
 }
 
     CoutM2(sss) << "Deleting table:" << dt->tablename << " before storing new table data. " << endl;
     query = "DELETE FROM " + dt->tablename + ";";  // delete all rows
 
-    if (!dal.Execute(query))
+    if (!dal->Execute(query))
 {
-   CoutM2(sss) << "Error deleting table data. " << dal.LastError() << endl;
+   CoutM2(sss) << "Error deleting table data. " << dal->LastError() << endl;
    return -1;
+	delete dal;
 }
 
 MyCLI.Display(&sss);  // Clear result
@@ -465,9 +471,9 @@ MyCLI.Display(&sss);  // Clear result
                 query = "INSERT INTO " + dt->tablename + " VALUES(" +values + ");";
                 rowsupdated++;
                 rowsadded++;
-                if (!dal.Execute(query))
+                if (!dal->Execute(query))
 {
-   CoutM2(sss) << "Error adding row into:" << dt->tablename << " " << dal.LastError() << endl;
+   CoutM2(sss) << "Error adding row into:" << dt->tablename << " " << dal->LastError() << endl;
 }  // Clear result
           }
    }
@@ -479,6 +485,7 @@ MyCLI.Display(&sss);  // Clear result
    }
 
     return rowsupdated;
+	delete dal;
 
 }
 
@@ -488,7 +495,7 @@ MyCLI.Display(&sss);  // Clear result
 int database::PushChangesToDB(datatable* dt){
 
   #define MAXCOL 20
-PostgresDatabase dal;
+IDatabase* dal = DatabaseFactory::Create(DatabaseType::PostgreSQL);
 string query = "";
 string values = "";
 int rowsupdated = 0;
@@ -496,10 +503,11 @@ int indexcol = 0;
 int i;
 stringstream ss;
 
-if (!dal.Connect(LastConnInfo))
+if (!dal->Connect(LastConnInfo))
 {
-    CoutM2(ss) << "DAL connect failed in PushChangesToDB. " << dal.LastError() << endl;
+    CoutM2(ss) << "DAL connect failed in PushChangesToDB. " << dal->LastError() << endl;
     return -1;
+	delete dal;
 }
 
 
@@ -528,13 +536,14 @@ if (!dal.Connect(LastConnInfo))
             query = "INSERT INTO " + dt->tablename + " VALUES(" +values + ");";
             rowsupdated++;
             rowsadded++;
-            if (!dal.Execute(query))
+            if (!dal->Execute(query))
 {
-   CoutM2(ss) << "Error adding WD. " << dal.LastError() << endl;
+   CoutM2(ss) << "Error adding WD. " << dal->LastError() << endl;
 }
 else
 {
    CoutM2(ss) << "Added new WD: " << query << endl;
+	delete dal;
 }  // Clear result
           }
       }
@@ -575,9 +584,9 @@ else
                             FormatForSQL(dt->dit->second.col[indexcol], dt->type[indexcol]) + ";";
                     rowsupdated++;
                     // cout << query << endl;
-                    if (!dal.Execute(query))
+                    if (!dal->Execute(query))
 {
-   cout << dal.LastError() << "\r\n";
+   cout << dal->LastError() << "\r\n";
 }  // Clear result
               }
           }// if row is modified
@@ -591,6 +600,7 @@ else
          ss.str("");                   // clear the buffer
    }
    return rowsupdated;
+	delete dal;
 
 }
 
@@ -604,7 +614,7 @@ int database::GetIndexList(datatable* dt, IntMap& mp){
   // Will hold the number of field in employee table
   int i;
   DBResult result;
-  PostgresDatabase dal;        // results of a query
+  IDatabase* dal = DatabaseFactory::Create(DatabaseType::PostgreSQL);        // results of a query
   string query;
   int indexval;
   int nrows ;   // number of rows returned
@@ -625,16 +635,16 @@ int database::GetIndexList(datatable* dt, IntMap& mp){
     if (ConnectionOK == false)
         return -1;
 
-    if (!dal.Connect(LastConnInfo))
+    if (!dal->Connect(LastConnInfo))
     {
-    cout << "DAL connect failed in GetIndexList. " << dal.LastError() << "\r\n";
+    cout << "DAL connect failed in GetIndexList. " << dal->LastError() << "\r\n";
     return -1;
     }
 
     query = "select \"" + dt->IndexCol + "\" from " + tablename + ";";   // SQL to get only the incex colum of the table
 
     // Execute the query
-    if (!dal.Query(query, result))
+    if (!dal->Query(query, result))
     {
     return -1;
     }
@@ -644,8 +654,11 @@ int database::GetIndexList(datatable* dt, IntMap& mp){
     if (nrows <= 0){
       
         return -1;  // no rows in this table
+    
+	delete dal;
     }
 
+	
     // **************************************************************
     //    Read the results
     // **************************************************************
