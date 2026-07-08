@@ -20,7 +20,8 @@
 #include <ios>
 #include <limits>
 #include <sys/ioctl.h>
-#include "PostgresDatabase.h"
+#include "database/DatabaseFactory.h"
+//#include "PostgresDatabase.h"
 #include "RepositoryManager.h"
 
 #include "adapters/TtyDeviceTableAdapter.h"
@@ -158,23 +159,25 @@ void *threadComm( void *ptr )
         StatInterfaceindex = GetSerialIndex(STAT_INTERFACE);  // get the serial index for the ttyS0 or whatever is the STAT_INTERFACE
 
         //OurDevices.LoadEthDevDesTable(dtEDD);  // read in the eth device designator table
-        PostgresDatabase ethDb;
+        IDatabase* ethDb = DatabaseFactory::Create(DatabaseType::PostgreSQL);
 
-   if (ethDb.Connect(myDB.LastConnInfo))
+   if (ethDb->Connect(myDB.LastConnInfo))
    {
-        RepositoryManager repos(&ethDb);
+        RepositoryManager repos(ethDb);
         EthDeviceTableAdapter ethAdapter(&repos.EthDevices());
         OurDevices.LoadEthDevDesTable(&ethAdapter);
    }
         CoutM1(ss) << "Loaded " << OurDevices.LoadCount << " Eth Device Designators. " << OurDevices.ErrorsLoading << " errors. " << endl;
        
-        PostgresDatabase ttyDb;
+        IDatabase* ttyDb = DatabaseFactory::Create(DatabaseType::PostgreSQL);
 
-if (ttyDb.Connect(myDB.LastConnInfo))
+if (ttyDb->Connect(myDB.LastConnInfo))
 {
-    RepositoryManager repos(&ttyDb);
+    RepositoryManager repos(ttyDb);
     TtyDeviceTableAdapter ttyAdapter(&repos.TtyDevices());
     OurDevices.LoadTtyDevDesTable(&ttyAdapter);
+	delete ethDb;
+	delete ttyDb;
 }
        // OurDevices.LoadTtyDevDesTable(dtTDD);  // read in the tty device designator table
         CoutM1(ss) << "Loaded " << OurDevices.LoadCount << " Tty Device Designators. " << OurDevices.ErrorsLoading << " errors. " << endl;
