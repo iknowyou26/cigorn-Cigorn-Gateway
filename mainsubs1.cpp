@@ -24,7 +24,7 @@
 #include <vector>
 #include "repositories/RouteRepository.h"
 #include "adapters/RouteTableAdapter.h"
-#include "PostgresDatabase.h"
+#include "database/DatabaseFactory.h"
 #include "RepositoryManager.h"
 #include "adapters/EthDeviceTableAdapter.h"
 #include "adapters/WirelessNatTableAdapter.h"
@@ -262,22 +262,24 @@ int BuildRouteTable(void)
 {
     DataRouter.ClearAll();
 
-    PostgresDatabase db;
-
-    if (!db.Connect(myDB.LastConnInfo))
+    //PostgresDatabase db;
+     IDatabase* db = DatabaseFactory::Create(DatabaseType::PostgreSQL);
+    if (!db->Connect(myDB.LastConnInfo))
     {
         cout << "BuildRouteTable DB connect failed: "
-             << db.LastError() << endl;
+             << db->LastError() << endl;
+	
         return -1;
     }
 
-    RouteRepository repo(&db);
+    RouteRepository repo(db);
     RouteTableAdapter adapter(&repo);
 
     if (!adapter.Load())
     {
         cout << "BuildRouteTable route load failed: "
-             << db.LastError() << endl;
+             << db->LastError() << endl;
+	delete db;
         return -1;
     }
 
@@ -306,22 +308,25 @@ int BuildWNATtable(void)
 
     WNAT.ClearAll();
 
-    PostgresDatabase db;
+    //PostgresDatabase db;
+    IDatabase* db = DatabaseFactory::Create(DatabaseType::PostgreSQL);
 
-    if (!db.Connect(myDB.LastConnInfo))
+    if (!db->Connect(myDB.LastConnInfo))
     {
         cout << "BuildWNATtable DB connect failed: "
-             << db.LastError() << endl;
+             << db->LastError() << endl;
+        
         return -1;
     }
 
-    RepositoryManager repos(&db);
+    RepositoryManager repos(db);
     WirelessNatTableAdapter adapter(&repos.WirelessNat());
 
     if (!adapter.Load())
     {
         cout << "BuildWNATtable WNAT load failed: "
-             << db.LastError() << endl;
+             << db->LastError() << endl;
+	delete db;
         return -1;
     }
 
@@ -506,11 +511,11 @@ bool ChangeConfigSetting(const string& idxfld, const string&  idxval, const stri
 
 // Load the routing and designator tables from a particular database
 bool LoadTablesFromDB(database* aDB){
-       PostgresDatabase ethDb;
-
-     if (ethDb.Connect(myDB.LastConnInfo))
+       //PostgresDatabase ethDb;
+     IDatabase* ethDb = DatabaseFactory::Create(DatabaseType::PostgreSQL);
+     if (ethDb->Connect(myDB.LastConnInfo))
     {
-    RepositoryManager repos(&ethDb);
+    RepositoryManager repos(ethDb);
     EthDeviceTableAdapter ethAdapter(&repos.EthDevices());
 
     //if (ethAdapter.Load())
@@ -562,7 +567,7 @@ bool LoadTablesFromDB(database* aDB){
        dtPagers->AutoAddRows = false;
        myDB.LoadTable(dtPagers);
        dtPagers->parentdb = aDB;
-
+       delete ethDb;
        return true;
        }
 
