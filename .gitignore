@@ -44,7 +44,9 @@ tablename
 
 # Local backup directories
 repositories.ok/
-database/
+
+# Do NOT ignore the real source directory
+# database/
 
 # Temporary editor/debug files
 parentdb
