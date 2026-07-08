@@ -60,3 +60,49 @@ AutoAddRows
 IndexCol
 colname[i]
 rows[indexval]
+# ===========================
+# Build directories
+# ===========================
+build/
+build-*/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Object files
+*.o
+*.a
+*.so
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.bundle
+
+# Log files
+*.log
+
+# Runtime configuration
+MySite.xml
+WDupdate.xml
+
+# Runtime keys
+rsa_priv.txt
+rsa_pub.txt
+
+# Backup and temporary files
+*.bak
+*.tmp
+*.swp
+*~
+
+# Core dumps
+core
+
+# IDE files
+.vscode/
+.idea/
