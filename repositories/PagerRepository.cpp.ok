@@ -1,0 +1,26 @@
+#include "PagerRepository.h"
+#include <sstream>
+
+PagerRepository::PagerRepository(IDatabase* database)
+{
+    db = database;
+}
+
+bool PagerRepository::LoadAll(DBResult& result)
+{
+    return db->Query("SELECT * FROM pagers;", result);
+}
+
+bool PagerRepository::AddPager(int pagerNumber)
+{
+    std::stringstream ss;
+    ss << "INSERT INTO pagers (pagernumber) VALUES (" << pagerNumber << ");";
+    return db->Execute(ss.str());
+}
+
+bool PagerRepository::DeletePager(int pagerNumber)
+{
+    std::stringstream ss;
+    ss << "DELETE FROM pagers WHERE pagernumber=" << pagerNumber << ";";
+    return db->Execute(ss.str());
+}

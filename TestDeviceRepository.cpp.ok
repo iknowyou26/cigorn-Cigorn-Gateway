@@ -1,0 +1,36 @@
+#include <iostream>
+
+#include "PostgresDatabase.h"
+#include "repositories/DeviceRepository.h"
+#include "database.h"
+#include "DeviceRepository.h"
+extern database myDB;
+
+int TestDeviceRepository()
+{
+    PostgresDatabase db;
+
+    if (!db.Connect(myDB.LastConnInfo))
+    {
+        std::cout
+            << "DeviceRepository connection failed\n";
+        return -1;
+    }
+
+    DeviceRepository repo(db);
+
+    if (!repo.Load())
+    {
+        std::cout
+            << "Load failed\n";
+        return -1;
+    }
+
+    std::cout
+        << "DeviceRepository loaded "
+        << repo.Data().RowCount()
+        << " device rows."
+        << std::endl;
+
+    return 0;
+}

@@ -1,0 +1,955 @@
+/* 
+ * File:   database.cpp
+ * Author: john
+ * 
+ * Created on September 14, 2010, 1:24 AM
+ */
+#include "PostgresDatabase.h"
+#include "DBResult.h"
+#include "database.h"
+#include "Cigorn.h"     // Our application-specific constants and headers
+#include "functions.h"
+#include "/usr/include/postgresql/libpq-fe.h"
+#include "DatabaseManager.h"
+#include "DBResult.h"
+//#include "/usr/include/postgresql/catalog/pg_type.h"
+
+#include <stdio.h>
+#include <string>
+#include <stdlib.h>   // Required by malloc()
+#include <queue>
+#include "datarow.h"
+#include <stdlib.h>
+#include "functions.h"
+
+
+database::database() {
+
+    ConnectionOK = false;
+    AutoAddRows = true;     // by default we add rows that don't exist if a routine trys to access it
+    NumOfUpdates = 0;
+    lastUpdate = TIMEDATENULL;
+    rowsadded = 0;
+    rowsdeleted = 0;
+}
+
+database::database(const database& orig) {
+}
+
+database::~database() {
+}
+
+
+// This this to make out class look generic to an SQL server.
+int database::ExecuteQuery(string){
+
+    return 0;
+
+}
+
+// void PQfinish(PGconn *conn);
+// Close the connection to the db and free memory
+bool database::close(void) {
+    ConnectionOK = false;
+    PQfinish(conn);
+    NumOfUpdates = 0;
+    rowsadded=0;
+    rowsdeleted=0;
+    return true;
+}
+
+
+// Must edit /etc/postgresql/8.2/main/postgresql.conf  to setup remote access to the DB
+bool database::connect(string dbhost, string dbName, string dbuser, string dbpass) {
+
+  char conninfo[500];
+  string ConnInfo;
+
+
+  ConnInfo = "dbname=" + dbName + " host=" + dbhost + " user=" + dbuser + " password=" + dbpass;
+  LastConnInfo = ConnInfo;
+  to_cstring(conninfo, ConnInfo, 500);
+
+  /* Make a connection to the database */
+  conn = PQconnectdb(conninfo);
+ 
+  /* Check to see that the backend connection was
+     successfully made */
+  if (PQstatus(conn) != CONNECTION_OK) {
+      cout << "Failed to create connection to Database." <<  PQerrorMessage(conn) << "\r\n";
+      cout << "Connection string:" << ConnInfo << "\r\n";
+      elog.store("Failed to create connection to Database.");
+      ConnectionOK = false;
+  }
+  else{
+     // read the data type indexes
+     if (GetTypes()>= 0){
+        cout << "Connection to database " << dbName << " OK. User=" << dbUser << "\r\n";
+        ConnectionOK = true;
+     }
+     else{
+        cout << "Read of system tables in database " << dbName << " failed." << "\r\n";
+        elog.store("Read of system tables in database failed.");
+        ConnectionOK = false;
+     }
+  }
+  return ConnectionOK;
+
+}
+
+//  Get a list of all of the types this database supports
+int database::GetTypes(void)
+{
+    int i;
+    int OID;
+    string query;
+    string s;
+    DBResult result;
+
+    query = "select OID, typname from pg_type;";
+
+    PostgresDatabase dal;
+    if (!dal.Connect(LastConnInfo))
+{
+    cout << "DAL connect failed. " << dal.LastError() << "\r\n";
+    cout << "DAL connection string:" << LastConnInfo << "\r\n";
+    return -1;
+}
+
+if (!dal.Query(query, result))
+    {
+        cout << "Can't query DB types through DAL. " << dal.LastError() << "\r\n";
+        return -1;
+    }
+
+    SQLtypes.clear();
+
+    for (i = 0; i < result.RowCount(); i++)
+    {
+        s = result.GetString(i, 1);
+        OID = atoi(result.GetString(i, 0).c_str());
+        SQLtypes[OID] = s;
+    }
+
+    return result.RowCount();
+}
+
+int database::LoadTable(datatable* dt){
+  #define MAXCOL 20
+  int i;
+  int ix_ID = -1;
+  DBResult result;        // results of a query
+  string query;
+  int indexval;
+  int nrows ;   // number of rows returned
+  int nFields;                      // number of fields in the result of the read
+
+  string tablename = dt->tablename;
+
+  if (tablename.size() < 1)
+      return -1;
+
+  if (ConnectionOK == false)
+      return -1;
+
+  query = "select * from " + tablename + ";";
+
+  //cout << query << endl;
+ 
+  // Fetch all rows from the data table
+  PostgresDatabase dal;
+
+if (!dal.Connect(LastConnInfo))
+{
+    cout << "DAL connect failed loading table: " << tablename << "\r\n";
+    cout << dal.LastError() << "\r\n";
+    return -1;
+}
+
+if (!dal.Query(query, result))
+{
+    cout << "Error 489. Failed to load table: " << tablename << "\r\n";
+    cout << "Query: " << query << "\r\n";
+    cout << dal.LastError() << "\r\n";
+    elog.store("Error 489. Failed to Load table: " + tablename);
+    return -1;
+}
+    nrows = result.RowCount();
+    nFields = result.ColumnCount();
+
+    dt->colname.clear();  // erase the list of column names
+
+    //cout << "nFields:" << nFields << endl;
+    
+    if (nFields <= 0){
+      
+      return -1;  // no columns
+    }
+
+    // Build up the list of field/column names
+    for (i = 0; i < nFields; i++){
+       dt->colname[i] = result.ColumnName(i);
+       dt->type[i] = result.ColumnType(i);
+       if (IsValidType(dt->type[i]) == false)
+          elog.store("Error with table " + tablename + ". Undefined column type:" + intToString(dt->type[i]) + " Col=" + "(" + dt->colname[i] + ")");
+
+       dt->defaultval[i] = OurDefaults(dt->type[i]);    // this programs default values for the various data types.
+       dt->readonly[i] = false;                         // be default, the fields is not read-only.
+       dt->msupdate[i] = false;                         // by default, the Chief site may not modify the fields
+       if (dt->IndexCol == dt->colname[i])
+            ix_ID = i;  // remember our index column
+    }
+
+    if (ix_ID < 0){
+        // Error. We could not find the index field.
+        
+        elog.store("Error with table " + tablename + ". Cannot find index column.");
+        return -1;
+    }
+
+    //cout << "nRows:" << nrows << endl;
+
+    if (nrows <= 0){
+        
+        return 0;    // no rows in this table
+    }
+
+    //rowstates {Unchanged, Added, Deleted, Modified, Detached };
+
+    dt->rows.clear();                            // clear out all the old rows.
+    datarow dr;  // create a new row
+
+    // **************************************************************
+    //    Read the results
+    // **************************************************************
+    // loop through the table and copy the results to the datatable
+    for (i = 0; i < result.RowCount(); i++)
+    {
+        //cout << "I=" << i << endl;
+        if (i>= MAXROWCOUNT){
+            // can't read any more in. We reached the limit we set on ourself
+            nrows = i;
+            break;
+        }
+
+        for (int j = 0; j < nFields; j++){
+            dr.col[j] = result.GetString(i, j);          // save the new data row
+        }
+        // {Unchanged, Added, Deleted, Modified, Detached }
+        dr.rowstate = Unchanged;
+
+        // Make a unique index to put this row into our dt map structure
+        if (dt->type[ix_ID] == TEXTOID)
+            indexval = i;  // for text indexes, use the row number as the index into our table
+        else
+            indexval = result.GetInt(i, ix_ID);    // get the ID for this row (index val)
+
+        dt->rows[indexval] = dr;   // put the row data into the table
+    }
+
+    //cout << "Size=" << dt->rows.size() << endl;
+    // Clear result
+    
+    return nrows;
+
+}
+
+    
+// Find the updates in the table, and push them back to the SQL server
+int database::PushUpdatesToDB(datatable* dt){
+  
+  #define MAXCOL 20
+  PostgresDatabase dal;
+
+if (!dal.Connect(LastConnInfo))
+{
+    cout << "DAL connect failed in PushUpdatesToDB. " << dal.LastError() << "\r\n";
+    return -1;
+}        // results of a query
+  string query = "";
+  string values = "";
+  int rowsupdated = 0;
+  int indexcol=0;
+  int ix=0;
+  int ID;
+  int i;
+  stringstream ss;
+
+
+ 
+  
+   // ********************************************
+   // First  ADD NEW  rows to the table
+   // ********************************************
+   // Loop through the table of our Wireless Devices using the map iterator (dit)
+   for (dt->dit = dt->rows.begin(); dt->dit != dt->rows.end(); dt->dit++){
+      // {Unchanged, Added, Deleted, Modified, Detached }
+      if((dt->dit->second.rowstate == Added)){
+          CoutM2(ss) << "Adding new row to " << dt->tablename << endl;
+          // This is a new row
+          dt->dit->second.rowstate = Unchanged;  // flag that we updated the row in the database
+
+          // Create the SQL value list that we will push to the server backend
+          values =  FormatForSQL(dt->dit->second.col[0], dt->type[0]);
+          for (i = 1; i < dt->type.size(); i++){
+              // Loop through the columns.
+              values = values + "," + FormatForSQL(dt->dit->second.col[i], dt->type[i]);
+          }
+
+          if (values.size() > 0){
+            // Send the SQL query to the backend
+            query = "INSERT INTO " + dt->tablename + " VALUES(" +values + ");";
+            rowsupdated++;
+            rowsadded++;
+            if (!dal.Execute(query))
+{
+    CoutM2(ss) << "Error adding WD. " << dal.LastError() << endl;
+}
+else
+{
+    CoutM2(ss) << "Added new WD: " << query << endl;
+} // Clear result
+          }
+      }
+   }
+
+   // Output the debug text if there is any
+   if (ss.str().size() > 0){
+         MyCLI.Display(&ss);  // send the text to the console output
+         ss.str("");                   // clear the buffer
+   }
+   // ********************************************
+   // Second  Update existing rows
+   // ********************************************
+   int modifiedRows = 0; // Track number of modified rows for log output
+   indexcol = dt->GetColumnIndex(dt->IndexCol);
+   if (indexcol >=0){
+       // Loop through the table of our Wireless Devices using the map iterator (dit)
+       for (dt->dit = dt->rows.begin(); dt->dit != dt->rows.end(); dt->dit++){
+          // {Unchanged, Added, Deleted, Modified }
+          if((dt->dit->second.rowstate == Modified)){
+              if(modifiedRows == 0){
+                CoutM2(ss) << "Modified row ";
+              }
+              modifiedRows++;
+              
+              // This is a new row
+              dt->dit->second.rowstate = Unchanged;  // flag that we updated this data
+
+              values = "";
+              for (i = 1; i < dt->type.size(); i++){
+                  // Loop through the columns
+                  if (dt->readonly[i] == false){
+                      // Add the values that are not read-only to the SQL push back to the database.
+                      if (values.size() > 0 )
+                          values = values + ",";
+                      values = values + "\"" + dt->colname[i] + "\"=" +
+                               FormatForSQL(dt->dit->second.col[i], dt->type[i]);
+                  }
+              }
+              if (values.size() > 0){
+                    query = "UPDATE " + dt->tablename + " SET " + values +
+                            " WHERE \"" + dt->IndexCol + "\"=" +
+                            FormatForSQL(dt->dit->second.col[indexcol], dt->type[indexcol]) + ";";
+                    rowsupdated++;
+                    // cout << query << endl;
+                    if (!dal.Execute(query))
+{
+    cout << dal.LastError() << "\r\n";
+}  // Clear result
+              }
+          }// if row is modified
+
+       } // for each row
+   } // If index col exists
+   // Output the number of rows modified
+   CoutM2(ss) << "[x" << modifiedRows << "]" << endl;
+
+   // *************************************************************
+   // Third  Remove rows that were deleted from the database table
+   // *************************************************************
+   if (indexcol >=0){
+
+       IntMap indexlist;
+       vector<int> RowsToDelete;
+       IntMapIterator itr;
+
+       if (GetIndexList(dt, indexlist) > 0 ){
+           // we have a list of all of the indexes in the table
+           // CoutM2(ss) << "There are " << indexlist.size() << " rows in this table. index col=" << dt->IndexCol << endl;
+           // Loop through all rows, and see if any are not in the database table
+           for (dt->dit = dt->rows.begin(); dt->dit != dt->rows.end(); dt->dit++){
+               ix = dt->dit->first;             // get the index for this row
+               itr = indexlist.find(ix);        // see if the index is in the map
+               if (itr == indexlist.end()){
+                   // Item is not in the table in the database. Someone must have removed it from the database
+                   // CoutM2(ss) << "Should delete " << ix << endl;
+                   RowsToDelete.push_back(ix);
+                   rowsdeleted++;
+               }
+           }
+       }
+
+       // now we have a list of all of the IDs that we need to delete.
+       while (RowsToDelete.size() > 0){
+          ix =  RowsToDelete.back();
+          RowsToDelete.pop_back();
+          CoutM2(ss) << "Auto deleting row with index " << intToString(ix) << endl;
+          dt->DeleteRow(ix);
+       }
+
+   } // If index col exists
+
+
+   lastUpdate = LocalTimeStamp();    // remember when we did this
+   NumOfUpdates++;                   // count the updates
+
+   // Output the debug text if there is any
+   if (ss.str().size() > 0){
+         MyCLI.Display(&ss);  // send the text to the console output
+         ss.str("");                   // clear the buffer
+   }
+   return rowsupdated;
+
+}
+
+
+// Delete the existing table, and replace it with this one.
+// Caution:  Erases all rows before storing new table
+int database::StoreTableToDB(datatable* dt){
+
+  #define MAXCOL 20
+  PostgresDatabase dal;       // results of a query
+  string query = "";
+  string values = "";
+  int rowsupdated = 0;
+  int i;
+  stringstream sss;
+  
+
+  if (!dal.Connect(LastConnInfo))
+{
+    CoutM2(sss) << "DAL connect failed in StoreTableToDB. " << dal.LastError() << endl;
+    return -1;
+}
+
+    CoutM2(sss) << "Deleting table:" << dt->tablename << " before storing new table data. " << endl;
+    query = "DELETE FROM " + dt->tablename + ";";  // delete all rows
+
+    if (!dal.Execute(query))
+{
+   CoutM2(sss) << "Error deleting table data. " << dal.LastError() << endl;
+   return -1;
+}
+
+MyCLI.Display(&sss);  // Clear result
+
+ 
+   // ********************************************
+   // First  ADD NEW  rows to the table
+   // ********************************************
+   // Loop through the table of our Wireless Devices using the map iterator (dit)
+   for (dt->dit = dt->rows.begin(); dt->dit != dt->rows.end(); dt->dit++){
+      // {Unchanged, Added, Deleted, Modified, Detached }
+          CoutM2(sss) << "Adding new row to " << dt->tablename << endl;
+          // This is a new row
+          dt->dit->second.rowstate = Unchanged;  // flag that we updated the row in the database
+
+          // Create the SQL value list that we will push to the server backend
+          values =  FormatForSQL(dt->dit->second.col[0], dt->type[0]);
+          for (i = 1; i < dt->type.size(); i++){
+              // Loop through the columns.
+              values = values + "," + FormatForSQL(dt->dit->second.col[i], dt->type[i]);
+          }
+
+          if (values.size() > 0){
+                // Send the SQL query to the backend
+                query = "INSERT INTO " + dt->tablename + " VALUES(" +values + ");";
+                rowsupdated++;
+                rowsadded++;
+                if (!dal.Execute(query))
+{
+   CoutM2(sss) << "Error adding row into:" << dt->tablename << " " << dal.LastError() << endl;
+}  // Clear result
+          }
+   }
+
+   // Output the debug text if there is any
+   if (sss.str().size() > 0){
+         MyCLI.Display(&sss);  // send the text to the console output
+         sss.str("");                   // clear the buffer
+   }
+
+    return rowsupdated;
+
+}
+
+
+// Find the changed rows in the table, and push them back to the SQL server
+// Does not delete deleted rows! Only modifies exising or adds new ones.
+int database::PushChangesToDB(datatable* dt){
+
+  #define MAXCOL 20
+PostgresDatabase dal;
+string query = "";
+string values = "";
+int rowsupdated = 0;
+int indexcol = 0;
+int i;
+stringstream ss;
+
+if (!dal.Connect(LastConnInfo))
+{
+    CoutM2(ss) << "DAL connect failed in PushChangesToDB. " << dal.LastError() << endl;
+    return -1;
+}
+
+
+
+
+   // ********************************************
+   // First  ADD NEW  rows to the table
+   // ********************************************
+   // Loop through the table of our Wireless Devices using the map iterator (dit)
+   for (dt->dit = dt->rows.begin(); dt->dit != dt->rows.end(); dt->dit++){
+      // {Unchanged, Added, Deleted, Modified, Detached }
+      if((dt->dit->second.rowstate == Added)){
+          CoutM2(ss) << "Adding new row to " << dt->tablename << endl;
+          // This is a new row
+          dt->dit->second.rowstate = Unchanged;  // flag that we updated the row in the database
+
+          // Create the SQL value list that we will push to the server backend
+          values =  FormatForSQL(dt->dit->second.col[0], dt->type[0]);
+          for (i = 1; i < dt->type.size(); i++){
+              // Loop through the columns.
+              values = values + "," + FormatForSQL(dt->dit->second.col[i], dt->type[i]);
+          }
+
+          if (values.size() > 0){
+            // Send the SQL query to the backend
+            query = "INSERT INTO " + dt->tablename + " VALUES(" +values + ");";
+            rowsupdated++;
+            rowsadded++;
+            if (!dal.Execute(query))
+{
+   CoutM2(ss) << "Error adding WD. " << dal.LastError() << endl;
+}
+else
+{
+   CoutM2(ss) << "Added new WD: " << query << endl;
+}  // Clear result
+          }
+      }
+   }
+
+   // Output the debug text if there is any
+   if (ss.str().size() > 0){
+         MyCLI.Display(&ss);  // send the text to the console output
+         ss.str("");                   // clear the buffer
+   }
+   // ********************************************
+   // Second  Update existing rows
+   // ********************************************
+   indexcol = dt->GetColumnIndex(dt->IndexCol);
+   if (indexcol >=0){
+       // Loop through the table of our Wireless Devices using the map iterator (dit)
+       for (dt->dit = dt->rows.begin(); dt->dit != dt->rows.end(); dt->dit++){
+          // {Unchanged, Added, Deleted, Modified }
+          if((dt->dit->second.rowstate == Modified)){
+              CoutM2(ss) << "Modified row " << endl;
+              // This is a new row
+              dt->dit->second.rowstate = Unchanged;  // flag that we updated this data
+
+              values = "";
+              for (i = 1; i < dt->type.size(); i++){
+                  // Loop through the columns
+                  if (dt->readonly[i] == false){
+                      // Add the values that are not read-only to the SQL push back to the database.
+                      if (values.size() > 0 )
+                          values = values + ",";
+                      values = values + "\"" + dt->colname[i] + "\"=" +
+                               FormatForSQL(dt->dit->second.col[i], dt->type[i]);
+                  }
+              }
+              if (values.size() > 0){
+                    query = "UPDATE " + dt->tablename + " SET " + values +
+                            " WHERE \"" + dt->IndexCol + "\"=" +
+                            FormatForSQL(dt->dit->second.col[indexcol], dt->type[indexcol]) + ";";
+                    rowsupdated++;
+                    // cout << query << endl;
+                    if (!dal.Execute(query))
+{
+   cout << dal.LastError() << "\r\n";
+}  // Clear result
+              }
+          }// if row is modified
+
+       } // for each row
+   } // If index col exists
+
+   // Output the debug text if there is any
+   if (ss.str().size() > 0){
+         MyCLI.Display(&ss);   // send the text to the console output
+         ss.str("");                   // clear the buffer
+   }
+   return rowsupdated;
+
+}
+
+
+// Get a list of all of the index values in the datatable. There
+// should be one entry in the mp map for every row in the table.
+// The table must use an integer for its index.
+int database::GetIndexList(datatable* dt, IntMap& mp){
+
+#define MAXCOL 20
+  // Will hold the number of field in employee table
+  int i;
+  PGresult *res;        // results of a query
+  string query;
+  int indexval;
+  int nrows ;   // number of rows returned
+  int indexcolnum;
+
+  indexcolnum = dt->GetColumnIndex(dt->IndexCol);
+
+  if (indexcolnum < 0)
+      return 0;
+
+    mp.clear();  // start by clearing out the list of indexs
+  
+    string tablename = dt->tablename;
+ 
+    if (tablename.size() < 1)
+        return -1;
+
+    if (ConnectionOK == false)
+        return -1;
+
+    query = "select \"" + dt->IndexCol + "\" from " + tablename + ";";   // SQL to get only the incex colum of the table
+
+    // Execute the query
+    res = PQexec(conn, query.c_str());
+
+     if (PQresultStatus(res) != PGRES_TUPLES_OK){
+        PQclear(res);
+        return -1;      // fail
+     }
+
+     nrows = PQntuples(res);   // number of rows returned
+
+    if (nrows <= 0){
+        PQclear(res);
+        return -1;  // no rows in this table
+    }
+
+    // **************************************************************
+    //    Read the results
+    // **************************************************************
+    // loop through the table and copy the results to the datatable
+    for (i = 0; i < PQntuples(res); i++)
+    {
+        if (i>= MAXROWCOUNT){
+            // can't read any more in. We reached the limit we set on ourself
+            nrows = i;
+            break;
+        }
+        // change 0 to indexcolnum some day.....
+        indexval = atoi(PQgetvalue(res, i, 0));         // column 0 will be the index value
+        mp[indexval] = indexval;                       // store it. Indexed by ID
+    }
+
+    PQclear(res);
+    return nrows;
+
+}
+// Take a string value s and format it for an SQL query in the proper type format tp
+string database::FormatForSQL(string s, string tp){
+    int i;
+    int x = -1;
+
+     // cout << "Type: " << tp << endl;
+     // Find the type OID for for data type tp
+     map<int, string>::iterator itx;
+     for (itx = myDB.SQLtypes.begin(); itx != myDB.SQLtypes.end(); itx++){
+        if (itx->second == tp){
+            x = itx->first;
+            break;
+        }
+     }
+    
+    if (x >= 0)
+        return FormatForSQL(s, x);
+    else
+        return "";
+
+}
+
+string database::TypeDesription(int tp){
+
+    string s = "";
+    int size = 0;
+
+               switch (tp)
+               {
+               case BOOLOID:
+                   s = string("BOOL");
+                   break;
+               case BYTEAOID:
+                   s = string("BYTEA");
+                   break;
+               case CHAROID:
+                   s = string("CHAR");
+                   break;
+               case NAMEOID:
+                   size = 32;
+                   s = string("NAME");
+                   break;
+               case INT8OID:
+                   size = 8;
+                   s = string("INT8");
+                   break;
+               case INT2OID:
+                   size = 2;
+                   s = string("INT2");
+                   break;
+               case INT2VECTOROID:
+                   size = 2;
+                   s = string("INT2VECTOR");
+                   break;
+               case INT4OID:
+                   size = 4;
+                   s = string("INT4");
+                   break;
+               case REGPROCOID:
+                   size = 4;
+                   s = string("REGPROC");
+                   break;
+               case TEXTOID:
+                   s = string("TEXT");
+                   break;
+               case XIDOID:
+                   size = 4;
+                   s = string("XID");
+                   break;
+               case 142:
+                   s = string("XML");
+                   break;
+               case TIMESTAMPOID:
+                   size = 8;
+                   s = string("TIMESTAMP");
+                   break;
+               case TIMESTAMPTZOID:
+                   size = 8;
+                   s = string("TIMESTAMPTZ");
+                   break;
+               default:
+                   s = string(ColTypeUnknown);
+                   break;
+               }
+       return s;
+}
+// Take a string and format it for an SQL query in the proper format
+// This is SQL language dependent.  Different SQL versions use different formatting
+// for various types.
+string database::FormatForSQL(string s, int tp){
+    int i;
+    int x = -1;
+    string R;
+
+    switch (tp){
+        case BOOLOID:
+            // bool
+            if (IsStringTrue(s) )
+                R = "TRUE";
+            else
+                R = "FALSE";
+            return R;
+            break;
+        case 17:
+            // bytea
+            return s;
+            break;
+        case 18:
+            //char
+            return s;
+            break;
+        case 19:
+            // name
+            return s;
+            break;
+        case 20:
+            // int8  (bigint)
+            return LongToString(StringToLong(s));
+            break;
+        case 21:
+            // int2
+            return s;
+            break;
+        case 22:
+            // int2vector
+            return s;
+            break;
+        case 23:
+            // int4  (integer, int)
+            return intToString(StringToInt(s));
+            break;
+        case 24:
+            // regproc
+            return s;
+            break;
+        case 25:
+            // text
+            s = "'" + s + "'";
+            return s;
+            break;
+        case 28:
+            // xid
+            return s;
+            break;
+        case 142:
+            // XML
+            return s;
+            break;
+        case TIMESTAMPOID:
+            // timestamp no time zone
+            if (s.size() < 6)
+                s = TIMEDATENULL;  // must have a valid time/date for the timestamp
+            s = "'" + s + "'";
+            return s;
+            break;
+        case TIMESTAMPTZOID:
+            // timestamp no time zone
+            if (s.size() < 6)
+                s = TIMEDATENULL;  // must have a valid time/date for the timestamp
+            s = "'" + s + "'";
+            return s;
+            break;
+    }
+
+    cout << "Error. Unknown SQL type:" << tp << endl;
+    return s;
+
+}
+
+// Return true of the type code is a valid column type we support in this software
+bool database::IsValidType(int t){
+
+    if ((TypeDesription(t) == "") || ( TypeDesription(t) == ColTypeUnknown))
+        return false;
+    else
+        return true;
+
+}
+
+
+
+// Our default values to use when creating a datarow.
+string database::OurDefaults(int t){
+
+    switch (t){
+        case BOOLOID:
+            // bool
+            return "f";
+        case 17:
+            // bytea
+            return "";
+        case 18:
+            //char
+            return "0";
+        case 19:
+            // name
+            return "";
+        case 20:
+            // int8  (bigint)
+            return "0";
+        case 21:
+            // int2
+            return "0";
+        case 22:
+            // int2vector
+            return "0";
+        case 23:
+            // int4  (integer, int)
+            return "0";
+        case 24:
+            // regproc
+            return "";
+        case 25:
+            // text
+            return "";
+        case 28:
+            // xid
+            return "";
+        case 142:
+            // XML
+            return "";
+        case TIMESTAMPOID:
+            // timestamp no time zone
+            return TIMEDATENULL;
+        case TIMESTAMPTZOID:
+            // timestamp no time zone
+            return TIMEDATENULL;
+    }
+    return "";
+
+}
+
+
+
+// Our default values to use when creating a datarow.
+bool database::ValidateType(int dtype, string s){
+    bool retval = true;  // assume it is OK
+
+    switch (dtype){
+        case BOOLOID:
+            // bool
+            break;
+        case 17:
+            // bytea
+            break;
+        case 18:
+            //char
+            break;
+        case 19:
+            // name
+            break;
+        case 20:
+            // int8  (bigint)
+            retval = StringIsInteger(s);
+            break;
+        case 21:
+            // int2
+            retval = StringIsInteger(s);
+            break;
+        case 22:
+            // int2vector
+            break;
+        case 23:
+            // int4  (integer, int)
+            retval = StringIsInteger(s);
+            break;
+        case 24:
+            // regproc
+            return "";
+        case 25:
+            // text
+            break;
+        case 28:
+            // xid
+            break;
+        case 142:
+            // XML
+            break;
+        case TIMESTAMPOID:
+            // timestamp no time zone
+            retval = IsDateTime(s);
+            break;
+        case TIMESTAMPTZOID:
+            // timestamp no time zone
+            retval = IsDateTime(s);
+            break;
+    }
+    return retval;
+
+}

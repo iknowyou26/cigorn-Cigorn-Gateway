@@ -1,0 +1,21 @@
+#ifndef PAGERREPOSITORY_H
+#define PAGERREPOSITORY_H
+
+#include "IRepository.h"
+#include "../IDatabase.h"
+#include "../DBResult.h"
+
+class PagerRepository : public IRepository
+{
+public:
+    PagerRepository(IDatabase* database);
+
+    bool LoadAll(DBResult& result);
+    bool AddPager(int pagerNumber);
+    bool DeletePager(int pagerNumber);
+
+private:
+    IDatabase* db;
+};
+
+#endif
