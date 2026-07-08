@@ -1,4 +1,4 @@
-/********************************************************/
+/*********************************extern int TestDeviceRepository();***********************/
 // RaveonNet.cpp
 //
 //
@@ -45,6 +45,7 @@ using namespace std;
 char *entry, letter, choice[2];
 int ascii, len, binary[8], total;
 int our_second = 0;
+
 Gateway Me;                        // the settings for this gateway
 map<string, Gateway> GateWays;     // The list of all other gateways we know about
 
@@ -352,6 +353,7 @@ int main(int argc, char *argv[],char *envp[] )
        if (myDB.ConnectionOK){
            ss << "Connected OK to DataBase:" << dbName << endl;
            cout << "Connected OK to DataBase:" << dbName << "\r\n";
+//TestSettingsTableAdapter();
        }
        else{
            ss << "Failed to connect to DataBase:" << dbName << endl;
@@ -369,13 +371,18 @@ int main(int argc, char *argv[],char *envp[] )
        LoadTablesFromDB(&myDB);
 
        ss << "Initialized table: " << dtWD->tablename << ". " << dtWD->rows.size() << " rows." << endl;
-       ss << "Initialized table: " << dtRT->tablename << ". " << dtRT->rows.size() << " rows." << endl;
+       ss << "Initialized route repository." << endl;
+       //ss << "Initialized table: " << dtRT->tablename << ". " << dtRT->rows.size() << " rows." << endl;
        //ss << "Initialized table: " << dtPR->tablename << ". " << dtPR->rows.size() << " rows." << endl;
-       ss << "Initialized table: " << dtEDD->tablename << ". " << dtEDD->rows.size() << " rows." << endl;
-       ss << "Initialized table: " << dtTDD->tablename << ". " << dtTDD->rows.size() << " rows." << endl;
-       ss << "Initialized table: " << dtWNAT->tablename << ". " << dtWNAT->rows.size() << " rows." << endl;
-       ss << "Initialized table: " << dtPagers->tablename << ". " << dtPagers->rows.size() << " rows." << endl;
-
+       //ss << "Initialized table: " << dtEDD->tablename << ". " << dtEDD->rows.size() << " rows." << endl;
+       //ss << "Initialized table: " << dtTDD->tablename << ". " << dtTDD->rows.size() << " rows." << endl;
+       //ss << "Initialized table: " << dtWNAT->tablename << ". " << dtWNAT->rows.size() << " rows." << endl;
+       //ss << "Initialized table: " << dtPagers->tablename << ". " << dtPagers->rows.size() << " rows." << endl;
+       ss << "Initialized EthDevice repository/adapter." << endl;
+       ss << "Initialized TtyDevice repository/adapter." << endl;
+       ss << "Initialized WirelessNat repository/adapter." << endl;
+       ss << "Initialized Pager repository/adapter." << endl;
+       ss << "Initialized pager repository." << endl;
        myDB.lastUpdate = LocalTimeStamp();
 
        // Now copy the SQL route table over to the the router table structure
@@ -618,7 +625,7 @@ int main(int argc, char *argv[],char *envp[] )
   sleep(2);             // wait while other tasks get killed.
   
   delete dtWD;          // remove the tables from the heap
-  delete dtRT;
+//  delete dtRT;
 //  delete dtPR;
 
   sleep(2);

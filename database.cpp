@@ -1,15 +1,16 @@
-/* 
+/* // void PQfinish(PGconn *conn);
  * File:   database.cpp
  * Author: john
  * 
  * Created on September 14, 2010, 1:24 AM
  */
-
+#include "PostgresDatabase.h"
+#include "DBResult.h"
 #include "database.h"
 #include "Cigorn.h"     // Our application-specific constants and headers
 #include "functions.h"
-#include "/usr/include/postgresql/libpq-fe.h"
-
+#include "DatabaseManager.h"
+#include "DBResult.h"
 //#include "/usr/include/postgresql/catalog/pg_type.h"
 
 #include <stdio.h>
@@ -27,7 +28,7 @@ database::database() {
     AutoAddRows = true;     // by default we add rows that don't exist if a routine trys to access it
     NumOfUpdates = 0;
     lastUpdate = TIMEDATENULL;
-    rowsadded = 0;
+// void PQfinish(PGconn *conn);    rowsadded = 0;
     rowsdeleted = 0;
 }
 
@@ -41,6 +42,7 @@ database::~database() {
 // This this to make out class look generic to an SQL server.
 int database::ExecuteQuery(string){
 
+    return 0;
 
 }
 
@@ -48,11 +50,11 @@ int database::ExecuteQuery(string){
 // Close the connection to the db and free memory
 bool database::close(void) {
     ConnectionOK = false;
-    PQfinish(conn);
+    dbManager.Database()->Disconnect();
     NumOfUpdates = 0;
     rowsadded=0;
     rowsdeleted=0;
-
+    return true;
 }
 
 
@@ -64,16 +66,15 @@ bool database::connect(string dbhost, string dbName, string dbuser, string dbpas
 
 
   ConnInfo = "dbname=" + dbName + " host=" + dbhost + " user=" + dbuser + " password=" + dbpass;
-
+  LastConnInfo = ConnInfo;
   to_cstring(conninfo, ConnInfo, 500);
 
-  /* Make a connection to the database */
-  conn = PQconnectdb(conninfo);
+  
  
   /* Check to see that the backend connection was
      successfully made */
-  if (PQstatus(conn) != CONNECTION_OK) {
-      cout << "Failed to create connection to Database." <<  PQerrorMessage(conn) << "\r\n";
+  if (!dbManager.Connect(ConnInfo)) {
+    cout << "Failed to create connection to Database." << dbManager.Database()->LastError() << "\r\n";
       cout << "Connection string:" << ConnInfo << "\r\n";
       elog.store("Failed to create connection to Database.");
       ConnectionOK = false;
@@ -95,45 +96,47 @@ bool database::connect(string dbhost, string dbName, string dbuser, string dbpas
 }
 
 //  Get a list of all of the types this database supports
-int database::GetTypes(void){
-  int i;
-  int OID;
-  PGresult *res;         // results of a query
-  string query;
-  string s;
-  int nrows ;            // number of rows returned
+int database::GetTypes(void)
+{
+    int i;
+    int OID;
+    string query;
+    string s;
+    DBResult result;
 
-  // Query the system table and get the col types and their OID back from the database
-  query = "select OID, typname from pg_type;";
+    query = "select OID, typname from pg_type;";
 
-  // Fetch rows from employee table
-  res = PQexec(conn, query.c_str());
+    PostgresDatabase dal;
+    if (!dal.Connect(LastConnInfo))
+{
+    cout << "DAL connect failed. " << dal.LastError() << "\r\n";
+    cout << "DAL connection string:" << LastConnInfo << "\r\n";
+    return -1;
+}
 
-  if (PQresultStatus(res) != PGRES_TUPLES_OK){
-     PQclear(res);
-     cout << "Can't query DB types." << "\r\n";
-     return -1;      // fail
-  }
-  else{
-        nrows = PQntuples(res);   // number of rows returned
-        // Get the list of field names
-        SQLtypes.clear();
-        for (i = 0; i < nrows; i++){
-            // cout << i << " " << PQgetvalue(res, i, 0) << "," << PQgetvalue(res, i, 1) << endl;
-            s = PQgetvalue(res, i, 1);      // get the types string for this Oid
-            OID = atoi(PQgetvalue(res, i, 0));
-            SQLtypes[OID] = s;              // add the type list.  
-        }
+if (!dal.Query(query, result))
+    {
+        cout << "Can't query DB types through DAL. " << dal.LastError() << "\r\n";
+        return -1;
     }
-    PQclear(res);
-    return nrows;
+
+    SQLtypes.clear();
+
+    for (i = 0; i < result.RowCount(); i++)
+    {
+        s = result.GetString(i, 1);
+        OID = atoi(result.GetString(i, 0).c_str());
+        SQLtypes[OID] = s;
+    }
+
+    return result.RowCount();
 }
 
 int database::LoadTable(datatable* dt){
   #define MAXCOL 20
   int i;
   int ix_ID = -1;
-  PGresult *res;        // results of a query
+  DBResult result;        // results of a query
   string query;
   int indexval;
   int nrows ;   // number of rows returned
@@ -152,35 +155,39 @@ int database::LoadTable(datatable* dt){
   //cout << query << endl;
  
   // Fetch all rows from the data table
-  res = PQexec(conn, query.c_str());
+  PostgresDatabase dal;
 
-  if (PQresultStatus(res) != PGRES_TUPLES_OK){
-      PQclear(res);
-      cout << "Error 489. Failed to load table: " << tablename << "\r\n";
-      cout << "Query: " << query << "\r\n";
-      elog.store("Error 489. Failed to Load table: " + tablename);
-      return -1;      // fail
-  }
+if (!dal.Connect(LastConnInfo))
+{
+    cout << "DAL connect failed loading table: " << tablename << "\r\n";
+    cout << dal.LastError() << "\r\n";
+    return -1;
+}
 
-  nrows = PQntuples(res);   // number of rows returned
-
-
-    // Get the field name
-    nFields = PQnfields(res);
+if (!dal.Query(query, result))
+{
+    cout << "Error 489. Failed to load table: " << tablename << "\r\n";
+    cout << "Query: " << query << "\r\n";
+    cout << dal.LastError() << "\r\n";
+    elog.store("Error 489. Failed to Load table: " + tablename);
+    return -1;
+}
+    nrows = result.RowCount();
+    nFields = result.ColumnCount();
 
     dt->colname.clear();  // erase the list of column names
 
     //cout << "nFields:" << nFields << endl;
     
     if (nFields <= 0){
-      PQclear(res);
+      
       return -1;  // no columns
     }
 
     // Build up the list of field/column names
     for (i = 0; i < nFields; i++){
-       dt->colname[i] = PQfname(res, i);                // get the column name from the db
-       dt->type[i] = PQftype(res, i);                   // get the column types
+       dt->colname[i] = result.ColumnName(i);
+       dt->type[i] = result.ColumnType(i);
        if (IsValidType(dt->type[i]) == false)
           elog.store("Error with table " + tablename + ". Undefined column type:" + intToString(dt->type[i]) + " Col=" + "(" + dt->colname[i] + ")");
 
@@ -193,7 +200,7 @@ int database::LoadTable(datatable* dt){
 
     if (ix_ID < 0){
         // Error. We could not find the index field.
-        PQclear(res);
+        
         elog.store("Error with table " + tablename + ". Cannot find index column.");
         return -1;
     }
@@ -201,7 +208,7 @@ int database::LoadTable(datatable* dt){
     //cout << "nRows:" << nrows << endl;
 
     if (nrows <= 0){
-        PQclear(res);
+        
         return 0;    // no rows in this table
     }
 
@@ -214,7 +221,7 @@ int database::LoadTable(datatable* dt){
     //    Read the results
     // **************************************************************
     // loop through the table and copy the results to the datatable
-    for (i = 0; i < PQntuples(res); i++)
+    for (i = 0; i < result.RowCount(); i++)
     {
         //cout << "I=" << i << endl;
         if (i>= MAXROWCOUNT){
@@ -224,7 +231,7 @@ int database::LoadTable(datatable* dt){
         }
 
         for (int j = 0; j < nFields; j++){
-            dr.col[j] = PQgetvalue(res, i,j);          // save the new data row
+            dr.col[j] = result.GetString(i, j);          // save the new data row
         }
         // {Unchanged, Added, Deleted, Modified, Detached }
         dr.rowstate = Unchanged;
@@ -233,14 +240,14 @@ int database::LoadTable(datatable* dt){
         if (dt->type[ix_ID] == TEXTOID)
             indexval = i;  // for text indexes, use the row number as the index into our table
         else
-            indexval = atoi(PQgetvalue(res, i,ix_ID));    // get the ID for this row (index val)
+            indexval = result.GetInt(i, ix_ID);    // get the ID for this row (index val)
 
         dt->rows[indexval] = dr;   // put the row data into the table
     }
 
     //cout << "Size=" << dt->rows.size() << endl;
     // Clear result
-    PQclear(res);
+    
     return nrows;
 
 }
@@ -250,7 +257,13 @@ int database::LoadTable(datatable* dt){
 int database::PushUpdatesToDB(datatable* dt){
   
   #define MAXCOL 20
-  PGresult *res;        // results of a query
+  PostgresDatabase dal;
+
+if (!dal.Connect(LastConnInfo))
+{
+    cout << "DAL connect failed in PushUpdatesToDB. " << dal.LastError() << "\r\n";
+    return -1;
+}        // results of a query
   string query = "";
   string values = "";
   int rowsupdated = 0;
@@ -261,9 +274,7 @@ int database::PushUpdatesToDB(datatable* dt){
   stringstream ss;
 
 
-  if (PQstatus(conn) != CONNECTION_OK) {
-      PQreset(conn);
-  }
+ 
   
    // ********************************************
    // First  ADD NEW  rows to the table
@@ -288,14 +299,14 @@ int database::PushUpdatesToDB(datatable* dt){
             query = "INSERT INTO " + dt->tablename + " VALUES(" +values + ");";
             rowsupdated++;
             rowsadded++;
-            res = PQexec(conn, query.c_str());
-            if( !res || PQresultStatus(res) != PGRES_COMMAND_OK ){
-               CoutM2(ss) << "Error adding WD. " << PQerrorMessage(conn) << endl;
-            }
-            else {
-                CoutM2(ss) << "Added new WD: " << query << endl;
-            }
-            PQclear(res);  // Clear result
+            if (!dal.Execute(query))
+{
+    CoutM2(ss) << "Error adding WD. " << dal.LastError() << endl;
+}
+else
+{
+    CoutM2(ss) << "Added new WD: " << query << endl;
+} // Clear result
           }
       }
    }
@@ -340,11 +351,10 @@ int database::PushUpdatesToDB(datatable* dt){
                             FormatForSQL(dt->dit->second.col[indexcol], dt->type[indexcol]) + ";";
                     rowsupdated++;
                     // cout << query << endl;
-                    res = PQexec(conn, query.c_str());
-                    if( !res || PQresultStatus(res) != PGRES_COMMAND_OK ){
-                       cout << PQerrorMessage(conn) << "\r\n";
-                    }
-                    PQclear(res);  // Clear result
+                    if (!dal.Execute(query))
+{
+    cout << dal.LastError() << "\r\n";
+}  // Clear result
               }
           }// if row is modified
 
@@ -407,29 +417,30 @@ int database::PushUpdatesToDB(datatable* dt){
 int database::StoreTableToDB(datatable* dt){
 
   #define MAXCOL 20
-  PGresult *res;        // results of a query
+  PostgresDatabase dal;       // results of a query
   string query = "";
   string values = "";
   int rowsupdated = 0;
   int i;
   stringstream sss;
-  ExecStatusType pqr;
+  
 
-  if (PQstatus(conn) != CONNECTION_OK) {
-      PQreset(conn);
-  }
+  if (!dal.Connect(LastConnInfo))
+{
+    CoutM2(sss) << "DAL connect failed in StoreTableToDB. " << dal.LastError() << endl;
+    return -1;
+}
 
     CoutM2(sss) << "Deleting table:" << dt->tablename << " before storing new table data. " << endl;
     query = "DELETE FROM " + dt->tablename + ";";  // delete all rows
 
-    res = PQexec(conn, query.c_str());
-    if( !res || PQresultStatus(res) != PGRES_COMMAND_OK ){
-       CoutM2(sss) << "Error deleting table data. " << PQerrorMessage(conn) << endl;
-       return -1;
-    }
+    if (!dal.Execute(query))
+{
+   CoutM2(sss) << "Error deleting table data. " << dal.LastError() << endl;
+   return -1;
+}
 
-    MyCLI.Display(&sss);  // send the text to the console output
-    PQclear(res);         // Clear result
+MyCLI.Display(&sss);  // Clear result
 
  
    // ********************************************
@@ -454,11 +465,10 @@ int database::StoreTableToDB(datatable* dt){
                 query = "INSERT INTO " + dt->tablename + " VALUES(" +values + ");";
                 rowsupdated++;
                 rowsadded++;
-                res = PQexec(conn, query.c_str());
-                if( !res || PQresultStatus(res) != PGRES_COMMAND_OK ){
-                   CoutM2(sss) << "Error adding row into:" << dt->tablename << " " << PQerrorMessage(conn) << endl;
-                }
-                PQclear(res);  // Clear result
+                if (!dal.Execute(query))
+{
+   CoutM2(sss) << "Error adding row into:" << dt->tablename << " " << dal.LastError() << endl;
+}  // Clear result
           }
    }
 
@@ -478,18 +488,22 @@ int database::StoreTableToDB(datatable* dt){
 int database::PushChangesToDB(datatable* dt){
 
   #define MAXCOL 20
-  PGresult *res;        // results of a query
-  string query = "";
-  string values = "";
-  int rowsupdated = 0;
-  int indexcol=0;
-  int i;
-  stringstream ss;
+PostgresDatabase dal;
+string query = "";
+string values = "";
+int rowsupdated = 0;
+int indexcol = 0;
+int i;
+stringstream ss;
+
+if (!dal.Connect(LastConnInfo))
+{
+    CoutM2(ss) << "DAL connect failed in PushChangesToDB. " << dal.LastError() << endl;
+    return -1;
+}
 
 
-  if (PQstatus(conn) != CONNECTION_OK) {
-      PQreset(conn);
-  }
+
 
    // ********************************************
    // First  ADD NEW  rows to the table
@@ -514,14 +528,14 @@ int database::PushChangesToDB(datatable* dt){
             query = "INSERT INTO " + dt->tablename + " VALUES(" +values + ");";
             rowsupdated++;
             rowsadded++;
-            res = PQexec(conn, query.c_str());
-            if( !res || PQresultStatus(res) != PGRES_COMMAND_OK ){
-               CoutM2(ss) << "Error adding WD. " << PQerrorMessage(conn) << endl;
-            }
-            else {
-                CoutM2(ss) << "Added new WD: " << query << endl;
-            }
-            PQclear(res);  // Clear result
+            if (!dal.Execute(query))
+{
+   CoutM2(ss) << "Error adding WD. " << dal.LastError() << endl;
+}
+else
+{
+   CoutM2(ss) << "Added new WD: " << query << endl;
+}  // Clear result
           }
       }
    }
@@ -561,11 +575,10 @@ int database::PushChangesToDB(datatable* dt){
                             FormatForSQL(dt->dit->second.col[indexcol], dt->type[indexcol]) + ";";
                     rowsupdated++;
                     // cout << query << endl;
-                    res = PQexec(conn, query.c_str());
-                    if( !res || PQresultStatus(res) != PGRES_COMMAND_OK ){
-                       cout << PQerrorMessage(conn) << "\r\n";
-                    }
-                    PQclear(res);  // Clear result
+                    if (!dal.Execute(query))
+{
+   cout << dal.LastError() << "\r\n";
+}  // Clear result
               }
           }// if row is modified
 
@@ -590,7 +603,8 @@ int database::GetIndexList(datatable* dt, IntMap& mp){
 #define MAXCOL 20
   // Will hold the number of field in employee table
   int i;
-  PGresult *res;        // results of a query
+  DBResult result;
+  PostgresDatabase dal;        // results of a query
   string query;
   int indexval;
   int nrows ;   // number of rows returned
@@ -611,20 +625,24 @@ int database::GetIndexList(datatable* dt, IntMap& mp){
     if (ConnectionOK == false)
         return -1;
 
+    if (!dal.Connect(LastConnInfo))
+    {
+    cout << "DAL connect failed in GetIndexList. " << dal.LastError() << "\r\n";
+    return -1;
+    }
+
     query = "select \"" + dt->IndexCol + "\" from " + tablename + ";";   // SQL to get only the incex colum of the table
 
     // Execute the query
-    res = PQexec(conn, query.c_str());
+    if (!dal.Query(query, result))
+    {
+    return -1;
+    }
 
-     if (PQresultStatus(res) != PGRES_TUPLES_OK){
-        PQclear(res);
-        return -1;      // fail
-     }
-
-     nrows = PQntuples(res);   // number of rows returned
+    nrows = result.RowCount();  // number of rows returned
 
     if (nrows <= 0){
-        PQclear(res);
+      
         return -1;  // no rows in this table
     }
 
@@ -632,7 +650,7 @@ int database::GetIndexList(datatable* dt, IntMap& mp){
     //    Read the results
     // **************************************************************
     // loop through the table and copy the results to the datatable
-    for (i = 0; i < PQntuples(res); i++)
+    for (i = 0; i < result.RowCount(); i++)
     {
         if (i>= MAXROWCOUNT){
             // can't read any more in. We reached the limit we set on ourself
@@ -640,11 +658,11 @@ int database::GetIndexList(datatable* dt, IntMap& mp){
             break;
         }
         // change 0 to indexcolnum some day.....
-        indexval = atoi(PQgetvalue(res, i, 0));         // column 0 will be the index value
+        indexval = result.GetInt(i, 0);         // column 0 will be the index value
         mp[indexval] = indexval;                       // store it. Indexed by ID
     }
 
-    PQclear(res);
+   
     return nrows;
 
 }

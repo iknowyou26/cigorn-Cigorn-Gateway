@@ -12,3 +12,51 @@ build-debug/
 build/
 *.o
 *.swp
+*.ok
+
+repositories.ok/
+adapters.ok/
+
+main.cpp.*-ok
+mainsubs1.cpp.*-ok
+
+parentdb
+rows[indexval]
+second.rowstate
+tablename
+# ==========================================================
+# Local development checkpoint files
+# ==========================================================
+
+# Generic backup/checkpoint files
+*.ok
+*.bak
+*.tmp
+
+# Checkpoint naming conventions
+*.before-*
+*.after-*
+*.dal*
+*.loadtable-*
+*.test-clean
+*.final-ok
+*.loadentries-ok
+
+# Local backup directories
+repositories.ok/
+database/
+
+# Temporary editor/debug files
+parentdb
+tablename
+rows[indexval]
+second.rowstate
+dit-
+*.zip
+*.tar.gz
+*.bundle
+CMakeLists.txt.*-ok
+AutoAddRows
+IndexCol
+colname[i]
+rows[indexval]

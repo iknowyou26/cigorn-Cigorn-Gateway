@@ -20,7 +20,11 @@
 #include <ios>
 #include <limits>
 #include <sys/ioctl.h>
+#include "PostgresDatabase.h"
+#include "RepositoryManager.h"
 
+#include "adapters/TtyDeviceTableAdapter.h"
+#include "adapters/EthDeviceTableAdapter.h"
 #include "serialhandler.h"
 #include "Cigorn.h"     // Our application-specific constants
 #include "CommandLine.h"
@@ -153,9 +157,26 @@ void *threadComm( void *ptr )
 
         StatInterfaceindex = GetSerialIndex(STAT_INTERFACE);  // get the serial index for the ttyS0 or whatever is the STAT_INTERFACE
 
-        OurDevices.LoadEthDevDesTable(dtEDD);  // read in the eth device designator table
+        //OurDevices.LoadEthDevDesTable(dtEDD);  // read in the eth device designator table
+        PostgresDatabase ethDb;
+
+   if (ethDb.Connect(myDB.LastConnInfo))
+   {
+        RepositoryManager repos(&ethDb);
+        EthDeviceTableAdapter ethAdapter(&repos.EthDevices());
+        OurDevices.LoadEthDevDesTable(&ethAdapter);
+   }
         CoutM1(ss) << "Loaded " << OurDevices.LoadCount << " Eth Device Designators. " << OurDevices.ErrorsLoading << " errors. " << endl;
-        OurDevices.LoadTtyDevDesTable(dtTDD);  // read in the tty device designator table
+       
+        PostgresDatabase ttyDb;
+
+if (ttyDb.Connect(myDB.LastConnInfo))
+{
+    RepositoryManager repos(&ttyDb);
+    TtyDeviceTableAdapter ttyAdapter(&repos.TtyDevices());
+    OurDevices.LoadTtyDevDesTable(&ttyAdapter);
+}
+       // OurDevices.LoadTtyDevDesTable(dtTDD);  // read in the tty device designator table
         CoutM1(ss) << "Loaded " << OurDevices.LoadCount << " Tty Device Designators. " << OurDevices.ErrorsLoading << " errors. " << endl;
 
         BuildWNATtable();                      // read in the WNAT table

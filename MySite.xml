@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <CigornIS>
     <!-- Information from Cigorn Gateway -->
-    <TimeStamp time="18:00:55" date="Jun 26 2026" />
+    <TimeStamp time="13:32:47" date="Jul 08 2026" />
     <SWversion major="4" minor="0" build="1" />
     <SiteProperties>
         <SiteName>Our Gateway</SiteName>
         <Master>TRUE</Master>
         <Role>Primary</Role>
-        <DBmodified>1782521945</DBmodified>
+        <DBmodified>1783531824</DBmodified>
         <Active>TRUE</Active>
     </SiteProperties>
     <SiteStatistics SocketCount="0" MsgInCount="0" MsgOutCount="0" />
