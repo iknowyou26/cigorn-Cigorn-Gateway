@@ -16,3 +16,10 @@ IDatabase* DatabaseFactory::Create(DatabaseType type)
             return nullptr;
     }
 }
+IDatabase* DatabaseFactory::Create(const std::string& type)
+{
+    if (type == "SQLServer")
+        return Create(DatabaseType::SQLServer);
+
+    return Create(DatabaseType::PostgreSQL);
+}
