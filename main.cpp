@@ -100,6 +100,7 @@ string Application = APP_TITLE;
 string AppVersion;
 bool maininitialized = false;
 bool consolethreadcreated = false;
+string dbType = "PostgreSQL";
 string dbUser = "postgres";
 string dbPass = "administrator";
 string dbName = "cigorn";

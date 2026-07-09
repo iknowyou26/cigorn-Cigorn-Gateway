@@ -102,7 +102,7 @@ extern string dbUser;
 extern string dbPass;
 extern string dbName;
 extern string dbHost;
-
+extern string dbType;
 extern int tm_seconds;             // how many seconds we have been running
 extern queue<string> qCLIin;
 extern bool ShutDownApplication;

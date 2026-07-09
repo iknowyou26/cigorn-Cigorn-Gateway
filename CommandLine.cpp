@@ -288,7 +288,10 @@ bool  CommandLine::cmdDBase(void){
         dbPass = sx[3];
         return true;
     }
-
+    if (SX[2] == "TYPE") {
+        dbType = sx[3];
+        return true;
+    }
  ssout << "Databse:" << dbName << "  User:" << dbUser << endl;
  ResultStr = ssout.str();
  return true;
