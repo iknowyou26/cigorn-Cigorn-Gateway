@@ -96,8 +96,68 @@ void SQLServerDatabase::Disconnect()
 
 bool SQLServerDatabase::Execute(const std::string& sql)
 {
-    lastError = "SQL Server Execute not implemented yet";
-    return false;
+    lastError.clear();
+
+    if (dbc == SQL_NULL_HDBC)
+    {
+        lastError = "SQL Server connection is not open";
+        return false;
+    }
+
+    SQLHSTMT stmt = SQL_NULL_HSTMT;
+
+    SQLRETURN ret = SQLAllocHandle(
+        SQL_HANDLE_STMT,
+        dbc,
+        &stmt
+    );
+
+    if (!SQL_SUCCEEDED(ret))
+    {
+        lastError = "Failed to allocate ODBC statement handle";
+        return false;
+    }
+
+    ret = SQLExecDirect(
+        stmt,
+        reinterpret_cast<SQLCHAR*>(
+            const_cast<char*>(sql.c_str())
+        ),
+        SQL_NTS
+    );
+
+    if (!SQL_SUCCEEDED(ret))
+    {
+        SQLCHAR state[7] = {0};
+        SQLCHAR message[512] = {0};
+        SQLINTEGER nativeError = 0;
+        SQLSMALLINT messageLength = 0;
+
+        SQLGetDiagRec(
+            SQL_HANDLE_STMT,
+            stmt,
+            1,
+            state,
+            &nativeError,
+            message,
+            sizeof(message),
+            &messageLength
+        );
+
+        lastError =
+            "SQL Server Execute failed. SQLSTATE=" +
+            std::string(reinterpret_cast<char*>(state)) +
+            " NativeError=" +
+            std::to_string(nativeError) +
+            " Message=" +
+            std::string(reinterpret_cast<char*>(message));
+
+        SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+        return false;
+    }
+
+    SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+    return true;
 }
 
 bool SQLServerDatabase::Query(
