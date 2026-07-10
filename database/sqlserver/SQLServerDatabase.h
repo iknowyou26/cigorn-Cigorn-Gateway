@@ -2,6 +2,9 @@
 #define SQLSERVERDATABASE_H
 
 #include <string>
+#include <sql.h>
+#include <sqlext.h>
+
 #include "../../IDatabase.h"
 #include "../../DBResult.h"
 
@@ -20,6 +23,8 @@ public:
     std::string LastError() const override;
 
 private:
+    SQLHENV env;
+    SQLHDBC dbc;
     std::string lastError;
 };
 

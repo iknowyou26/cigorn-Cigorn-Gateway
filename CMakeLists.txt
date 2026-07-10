@@ -31,6 +31,7 @@ add_executable(cigorn
 
 target_link_libraries(cigorn
     pq
+    odbc
     crypt
     pthread
 )
