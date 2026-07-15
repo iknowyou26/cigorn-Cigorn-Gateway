@@ -108,3 +108,21 @@ core
 # IDE files
 .vscode/
 .idea/
+# Database exports
+*.sql
+*.sql.gz
+*.backup
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+
+# Build output
+build/
+build-debug/
+build-dal/
+*.o
+
+# Nested copied source repository
+Cigornv4.0.1-minimal/

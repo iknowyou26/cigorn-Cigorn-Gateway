@@ -1,18 +1,57 @@
 #include "DatabaseManager.h"
-//#include "PostgresDatabase.h"
+
 #include "database/DatabaseFactory.h"
+
 DatabaseManager::DatabaseManager()
+    : db(
+        DatabaseFactory::Create(
+            DatabaseType::PostgreSQL
+        )
+      )
 {
-    db = DatabaseFactory::Create(DatabaseType::PostgreSQL);
 }
 
 DatabaseManager::~DatabaseManager()
 {
-    delete db;
+    if (db != nullptr)
+    {
+        db->Disconnect();
+        delete db;
+        db = nullptr;
+    }
 }
 
-bool DatabaseManager::Connect(const std::string& connInfo)
+bool DatabaseManager::SelectDatabase(
+    const std::string& databaseType
+)
 {
+    IDatabase* selectedDatabase =
+        DatabaseFactory::Create(databaseType);
+
+    if (selectedDatabase == nullptr)
+    {
+        return false;
+    }
+
+    if (db != nullptr)
+    {
+        db->Disconnect();
+        delete db;
+    }
+
+    db = selectedDatabase;
+    return true;
+}
+
+bool DatabaseManager::Connect(
+    const std::string& connInfo
+)
+{
+    if (db == nullptr)
+    {
+        return false;
+    }
+
     return db->Connect(connInfo);
 }
 

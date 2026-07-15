@@ -59,15 +59,58 @@ bool database::close(void) {
 
 
 // Must edit /etc/postgresql/8.2/main/postgresql.conf  to setup remote access to the DB
-bool database::connect(string dbhost, string dbName, string dbuser, string dbpass) {
+bool database::connect(
+    string dbhost,
+    string dbName,
+    string dbuser,
+    string dbpass
+)
+{
+    char conninfo[500];
+    string ConnInfo;
 
-  char conninfo[500];
-  string ConnInfo;
+    if (!dbManager.SelectDatabase(dbType))
+    {
+        cout
+            << "Unsupported database type: "
+            << dbType
+            << "\r\n";
 
+        return false;
+    }
 
-  ConnInfo = "dbname=" + dbName + " host=" + dbhost + " user=" + dbuser + " password=" + dbpass;
-  LastConnInfo = ConnInfo;
-  to_cstring(conninfo, ConnInfo, 500);
+    if (dbType == "SQLServer")
+    {
+        ConnInfo =
+            "Driver={ODBC Driver 18 for SQL Server};"
+            "Server=" + dbhost + ";"
+            "Database=" + dbName + ";"
+            "Encrypt=yes;"
+            "TrustServerCertificate=yes;";
+
+        if (dbuser.empty())
+        {
+            ConnInfo +=
+                "Trusted_Connection=yes;";
+        }
+        else
+        {
+            ConnInfo +=
+                "UID=" + dbuser + ";"
+                "PWD=" + dbpass + ";";
+        }
+    }
+    else
+    {
+        ConnInfo =
+            "dbname=" + dbName +
+            " host=" + dbhost +
+            " user=" + dbuser +
+            " password=" + dbpass;
+    }
+
+    LastConnInfo = ConnInfo;
+    to_cstring(conninfo, ConnInfo, 500);
 
   
  
