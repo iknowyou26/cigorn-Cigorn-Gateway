@@ -56,7 +56,10 @@ bool database::close(void) {
     rowsdeleted=0;
     return true;
 }
-
+IDatabase* database::GetDAL()
+{
+    return dbManager.Database();
+}
 
 // Must edit /etc/postgresql/8.2/main/postgresql.conf  to setup remote access to the DB
 bool database::connect(

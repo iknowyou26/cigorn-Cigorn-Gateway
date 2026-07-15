@@ -56,6 +56,7 @@ public:
     virtual ~database();
     bool connect(string, string, string, string);
     bool close(void);
+    IDatabase* GetDAL();
     int ExecuteQuery(string);
     int LoadTable(datatable* dt);
     int PushUpdatesToDB(datatable* dt);

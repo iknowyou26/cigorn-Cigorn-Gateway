@@ -262,15 +262,13 @@ int BuildRouteTable(void)
 {
     DataRouter.ClearAll();
 
-    //PostgresDatabase db;
-     IDatabase* db = DatabaseFactory::Create(DatabaseType::PostgreSQL);
-    if (!db->Connect(myDB.LastConnInfo))
-    {
-        cout << "BuildRouteTable DB connect failed: "
-             << db->LastError() << endl;
-	
-        return -1;
-    }
+    IDatabase* db = myDB.GetDAL();
+
+if (db == nullptr)
+{
+    cout << "BuildRouteTable database is not connected." << endl;
+    return -1;
+}
 
     RouteRepository repo(db);
     RouteTableAdapter adapter(&repo);
@@ -279,7 +277,7 @@ int BuildRouteTable(void)
     {
         cout << "BuildRouteTable route load failed: "
              << db->LastError() << endl;
-	delete db;
+	
         return -1;
     }
 
@@ -308,16 +306,13 @@ int BuildWNATtable(void)
 
     WNAT.ClearAll();
 
-    //PostgresDatabase db;
-    IDatabase* db = DatabaseFactory::Create(DatabaseType::PostgreSQL);
+    IDatabase* db = myDB.GetDAL();
 
-    if (!db->Connect(myDB.LastConnInfo))
-    {
-        cout << "BuildWNATtable DB connect failed: "
-             << db->LastError() << endl;
-        
-        return -1;
-    }
+if (db == nullptr)
+{
+    cout << "BuildWNATtable database is not connected." << endl;
+    return -1;
+}
 
     RepositoryManager repos(db);
     WirelessNatTableAdapter adapter(&repos.WirelessNat());
@@ -326,7 +321,7 @@ int BuildWNATtable(void)
     {
         cout << "BuildWNATtable WNAT load failed: "
              << db->LastError() << endl;
-	delete db;
+	
         return -1;
     }
 
@@ -512,20 +507,19 @@ bool ChangeConfigSetting(const string& idxfld, const string&  idxval, const stri
 // Load the routing and designator tables from a particular database
 bool LoadTablesFromDB(database* aDB){
        //PostgresDatabase ethDb;
-     IDatabase* ethDb = DatabaseFactory::Create(DatabaseType::PostgreSQL);
-     if (ethDb->Connect(myDB.LastConnInfo))
-    {
-    RepositoryManager repos(ethDb);
-    EthDeviceTableAdapter ethAdapter(&repos.EthDevices());
+       IDatabase* activeDb = aDB->GetDAL();
 
-    //if (ethAdapter.Load())
-    //{
-        //cout << "EthDeviceTableAdapter startup loaded "
-             //<< ethAdapter.RowCount()
-             //<< " ethernet device rows." << endl;
-    //}
-     
-      }
+if (activeDb != nullptr)
+{
+    RepositoryManager repos(activeDb);
+
+    EthDeviceTableAdapter ethAdapter(
+        &repos.EthDevices()
+    );
+
+    // Keep disabled until it is wired into dtEDD.
+    // ethAdapter.Load();
+}
        // create the data table objects that will hold the records from the SQL database
        dtWD = new datatable(WDEVICE, fld_ID);    // Create the table to hold info about our WDs. Index is ID.
        dtWD->AutoAddRows = myDB.AutoAddRows;     // use the default autoadd setting for this table
@@ -567,7 +561,7 @@ bool LoadTablesFromDB(database* aDB){
        dtPagers->AutoAddRows = false;
        myDB.LoadTable(dtPagers);
        dtPagers->parentdb = aDB;
-       delete ethDb;
+       
        return true;
        }
 
