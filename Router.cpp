@@ -1,8 +1,8 @@
 /* 
  * File:   Router.cpp
- * Author: john
+ * Author: Ryan Le
  * 
- * Created on September 10, 2010, 9:19 PM
+ * Created on 07/15/2026
  */
 
 #include "Router.h"
@@ -11,7 +11,7 @@
 #include <string.h>   // Required by strcpy()
 #include <stdlib.h>   // Required by malloc()
 #include <stdio.h>
-#include <pthread.h>
+#include "platform/thread/PlatformLockGuard.h"
 #include <ios>
 #include <limits>
 #include <queue>
@@ -56,10 +56,7 @@ bool Router::AddRoute(int Format, string srcif, string dstif, int lowID, int upI
    NewEntry.lowerID = lowID;
    NewEntry.upperID = upID;
 
-   pthread_mutex_lock(&tablelock);            // route table lock
-   RouteTable.insert(make_pair(i,NewEntry));  // insert the new entry
-   pthread_mutex_unlock(&tablelock);          // route table lock
-
+   
    return true;
 }
 
@@ -79,14 +76,23 @@ bool  Router::ClearAll(){
 bool  Router::AddRoute(routeEntry  NewEntry){
    int i = RouteTable.size()+1;  // The next map index for this entry
 
-   pthread_mutex_lock(&tablelock);            // route table lock
-   RouteTable.insert(make_pair(i, NewEntry));  // insert the new entry
-   pthread_mutex_unlock(&tablelock);            // route table lock
-
+  cigorn::PlatformLockGuard lock(tablelock);
+RouteTable.insert(make_pair(i, NewEntry));
    return true;
 
 }
+bool Router::RouteMSG(BinaryEntry msg)
+{
+    // existing setup code
 
+    {
+        cigorn::PlatformLockGuard lock(tablelock);
+
+        // existing route-table loop
+    }
+
+    // existing output and return code
+}
 int Router::RouteCount(void){
 
     return RouteTable.size();

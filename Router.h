@@ -1,8 +1,8 @@
 /* 
  * File:   Router.h
- * Author: john
+ * Author: Ryan Le
  *
- * Created on September 10, 2010, 9:19 PM
+ * Created on 07/15/2026mber 10, 2010, 9:19 PM
  */
 
 #ifndef _ROUTER_H
@@ -11,7 +11,7 @@
 
 #include "ourstructures.h"
 #include "BinaryEntry.h"
-
+#include "platform/thread/PlatformLockGuard.h"
 #include <string>
 #include <queue>
 #include <vector>
@@ -92,7 +92,7 @@ public:
     Router();
     Router(const Router& orig);
     virtual ~Router();
-
+  
     bool RouteMSG(BinaryEntry);
     bool AddRoute(int ,string , string , int , int );
     bool  AddRoute(routeEntry);
@@ -116,7 +116,8 @@ public:
     int pauseStreams(string devDesFilter, bool pauseInput, bool pauseOutput, double unpauseTime);
     int unpauseStreams(string devDesFilter, bool unpauseInput, bool unpauseOutput);
     
-    pthread_mutex_t tablelock;    // Lock for the router table
+   cigorn::PlatformLockGuard lock(tablelock);
+
     stringstream ss;
 
     vector<RouteInfo> LastRoutes;  // Messages that are queued up to be sent out this TTY port
