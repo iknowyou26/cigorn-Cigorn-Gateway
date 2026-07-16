@@ -1,21 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
+#include "platform/Platform.h"
 
-#include "dataparser.h"
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>    // Utilities for networking
 #include <string>
-#include <unistd.h>
+
+#ifndef _WIN32
+#include <sys/types.h>
 #include <sys/ioctl.h>
 #include <linux/if.h>
-#include <netdb.h>
 #include <fcntl.h>
-#include <netinet/in.h>
+
 #undef __USE_MISC
 #include <net/if.h>
+#endif
 
+#include "dataparser.h"
 #include "Cigorn.h"     // Our application-specific constants and headers
 #include "dataparser.h"
 #include "TCPsocket.h"

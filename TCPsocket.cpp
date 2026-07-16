@@ -4,25 +4,25 @@
    The port number is passed as an argument */
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
+#include "platform/Platform.h"
 
-#include "dataparser.h"
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>    // Utilities for networking
 #include <string>
-#include <unistd.h>
+
+#ifndef _WIN32
+#include <sys/types.h>
 #include <sys/ioctl.h>
 #include <linux/if.h>
-#include <netdb.h>
 #include <fcntl.h>
+#endif
+
+#include "dataparser.h"
 #include "procinfo.h"
 #include "SocketThread.h"
 #include "network.h"
-
+#ifndef _WIN32
 #undef __USE_MISC
 #include <net/if.h>
+#endif
 
 #include "errno.h"  // added by Chad 4-11
 
