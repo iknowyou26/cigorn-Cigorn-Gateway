@@ -84,7 +84,7 @@ bool Router::RouteMSG(BinaryEntry msg)
     // existing setup code
 
     {
-    pthread_mutex_unlock(&tablelock);
+   
     }
 
     // existing output and return code
@@ -144,7 +144,8 @@ bool Router::RouteMSG(BinaryEntry msg){
         it = RecentRoutes.begin();
         RecentRoutes.erase(it);
     }
-  
+  {
+    cigorn::PlatformLockGuard lock(tablelock);
     if (msg.SrcDevDesIndex < 0 || msg.SrcDevDesIndex >= MAXDEVDES)
         return false; // invalid index
 
@@ -165,7 +166,7 @@ bool Router::RouteMSG(BinaryEntry msg){
          out.str("");                   // clear the buffer
     }
     
-    pthread_mutex_lock(&tablelock);            // route table lock
+    
 
     // Loop through the route table to see if this message should be routed.
     for (i=1; i<= RouteTable.size(); i++){
@@ -234,7 +235,7 @@ bool Router::RouteMSG(BinaryEntry msg){
         }
     }
 
-    pthread_mutex_unlock(&tablelock);            // route table lock
+
     // Output the debug text if there is any
     if (out.str().size() > 0){
          MyCLI.OutputText(out.str());   // send the text to the console output
@@ -401,7 +402,7 @@ routeEntry Router::RouteTableEntry(int i){
     std::stringstream ss;
     string s;
     routeEntry re;
-
+}
 cigorn::PlatformLockGuard lock(tablelock);           // route table lock
 
     // Loop through the route table to see if this message should be routed.
@@ -418,7 +419,7 @@ cigorn::PlatformLockGuard lock(tablelock);           // route table lock
         re.upperID = -1;
         re.format = -1;
     }
-    pthread_mutex_unlock(&tablelock);            // route table lock
+
     return re;
 }
 
@@ -470,7 +471,7 @@ cigorn::PlatformLockGuard lock(tablelock);            // route table lock
 
         s = s + (char)CR + (char)NL;
     }
-    pthread_mutex_unlock(&tablelock);            // route table lock
+
     return s;
 }
 
