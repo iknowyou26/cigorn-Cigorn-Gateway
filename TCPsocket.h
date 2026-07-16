@@ -1,8 +1,8 @@
 /* 
  * File:   TCPsocket.h
- * Author: john
+ * Author: Ryan le
  *
- * Created on August 5, 2010, 9:34 PM
+ * Created on july 15, 9:34 PM
  */
 
 #ifndef _TCPSOCKET_H
@@ -11,7 +11,7 @@
 #include "BinaryEntry.h"
 #include <queue>
 #include <sstream>
-#include <netdb.h>
+#include "platform/Platform.h"
 
 #define MAXBUFSIZE  10000   // The largest amount of data we can pass to/from the socket in one chunk.
 #define pServer     0       // TCP/IP Server

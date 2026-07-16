@@ -1,15 +1,15 @@
 /* 
  * File:   SocketThread.h
- * Author: john
+ * Author: Ryan Le
  *
- * Created on December 21, 2010, 6:43 AM
+ * Created on July 21, 2026, 6:43 AM
  */
 
 #ifndef SOCKETTHREAD_H
 #define	SOCKETTHREAD_H
 
 #include "dataparser.h"
-#include <netdb.h>
+#include "platform/Platform.h"
 
 
 struct EthernetInterface{
