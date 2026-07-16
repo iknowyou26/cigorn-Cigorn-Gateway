@@ -11,7 +11,7 @@
 
 #include "ourstructures.h"
 #include "BinaryEntry.h"
-#include "platform/thread/PlatformLockGuard.h"
+#include "platform/thread/PlatformMutex.h"
 #include <string>
 #include <queue>
 #include <vector>
@@ -116,7 +116,7 @@ public:
     int pauseStreams(string devDesFilter, bool pauseInput, bool pauseOutput, double unpauseTime);
     int unpauseStreams(string devDesFilter, bool unpauseInput, bool unpauseOutput);
     
-   cigorn::PlatformLockGuard lock(tablelock);
+    cigorn::PlatformMutex tablelock;
 
     stringstream ss;
 

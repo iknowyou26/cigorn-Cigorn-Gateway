@@ -64,10 +64,8 @@ bool Router::AddRoute(int Format, string srcif, string dstif, int lowID, int upI
 
 bool  Router::ClearAll(){
 
-   pthread_mutex_lock(&tablelock);            // route table lock
-   RouteTable.clear();
-   pthread_mutex_unlock(&tablelock);            // route table lock
-
+   cigorn::PlatformLockGuard lock(tablelock);
+RouteTable.insert(make_pair(i, NewEntry));
    return true;
 
 }
@@ -86,9 +84,7 @@ bool Router::RouteMSG(BinaryEntry msg)
     // existing setup code
 
     {
-        cigorn::PlatformLockGuard lock(tablelock);
-
-        // existing route-table loop
+    pthread_mutex_unlock(&tablelock);
     }
 
     // existing output and return code
@@ -406,7 +402,7 @@ routeEntry Router::RouteTableEntry(int i){
     string s;
     routeEntry re;
 
-    pthread_mutex_lock(&tablelock);            // route table lock
+cigorn::PlatformLockGuard lock(tablelock);           // route table lock
 
     // Loop through the route table to see if this message should be routed.
     if (i <= RouteTable.size()){
@@ -458,7 +454,7 @@ string Router::RouteTableToText(void){
      string s = "";
      int i = 0;
 
-    pthread_mutex_lock(&tablelock);            // route table lock
+cigorn::PlatformLockGuard lock(tablelock);            // route table lock
 
     // Loop through the route table to see if this message should be routed.
     for (i=1; i<= RouteTable.size(); i++){
