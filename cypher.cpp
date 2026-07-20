@@ -108,51 +108,54 @@ void cypher::newkey(string s){
 
 // test the cypher engine to make sure it is working OK
 // return the number of test we fail.
-int cypher::testcypher(void ) {
-    string IN = "1234";
-    string MID;
-    string OUT;
-    string oldkey = cigornkey;  // remember the key so we can restore it
-    int i;
+int cypher::testcypher(void)
+{
+    string inputText = "1234";
+    string encryptedText;
+    string outputText;
+    string oldkey = cigornkey;
     int retval = 0;
 
     newkey("t7&dL~g");
-    MID = encypher(IN);
-    OUT = decypher(MID);
-    
-    if (IN != OUT){
-        /*cout << "IN{" << IN.size() << "}"  << IN << ". MID=" << MID << ". OUT{" << OUT.size() << "}"<< OUT << ". " << IN.compare(OUT) <<endl;
-        for (i=0; i<IN.size(); i++){
-            cout << "IN-OUT " << i << "  " << CharToAsc(IN[i]) << "-" <<  CharToAsc(OUT[i]) << endl;
-        }*/
-        retval++;  // faild this test
+    encryptedText = encypher(inputText);
+    outputText = decypher(encryptedText);
+
+    if (inputText != outputText)
+    {
+        retval++;
     }
 
     newkey("1234567");
-    IN = "1234";
-    MID = encypher(IN);
-    OUT = decypher(MID);
-    if (IN != OUT){
-        retval++;  // faild this test
+    inputText = "1234";
+    encryptedText = encypher(inputText);
+    outputText = decypher(encryptedText);
+
+    if (inputText != outputText)
+    {
+        retval++;
     }
 
-    IN = "cigorn";
-    MID = encypher(IN);
-    OUT = decypher(MID);
-    if (IN != OUT){
-        retval++;  // faild this test
+    inputText = "cigorn";
+    encryptedText = encypher(inputText);
+    outputText = decypher(encryptedText);
+
+    if (inputText != outputText)
+    {
+        retval++;
     }
 
     // fbccda9146486f28 decodes to 1234 with key "t7&dL~g"
     newkey("t7&dL~g");
-    IN = "1234";
-    MID = "fbccda9146486f28";
-    OUT = decypher(MID);
-    if (IN != OUT){
-        retval++;  // faild this test
+    inputText = "1234";
+    encryptedText = "fbccda9146486f28";
+    outputText = decypher(encryptedText);
+
+    if (inputText != outputText)
+    {
+        retval++;
     }
 
-    newkey(cigornkey);
+    newkey(oldkey);
     return retval;
 }
 

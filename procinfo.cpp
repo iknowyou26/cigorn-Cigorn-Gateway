@@ -14,7 +14,6 @@
 #include <stdlib.h>   // Required by malloc()
 #include <stdio.h>
 #include "functions.h"
-#include <arpa/inet.h>    // Utilities for networking
 
 procinfo::procinfo() {
 }

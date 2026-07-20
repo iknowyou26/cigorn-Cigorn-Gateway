@@ -20,7 +20,7 @@
 
 #include "Cigorn.h"     // Our application-specific constants
 #include "CommThread.h"
-#include <hash_map>
+#include <unordered_map>
 #include "Translator.h"
 
 using namespace std;
@@ -46,49 +46,49 @@ int Router::RecentRouteCount(void ) {
 
 
 // Add an entry to the router table
-bool Router::AddRoute(int Format, string srcif, string dstif, int lowID, int upID ){
-   routeEntry NewEntry;
-   int i = RouteTable.size()+1;  // The next map index for this entry
-
-   NewEntry.format = Format;
-   NewEntry.srcDevDes = srcif;
-   NewEntry.dstDevDes = dstif;
-   NewEntry.lowerID = lowID;
-   NewEntry.upperID = upID;
-
-   
-   return true;
-}
-
-
-
-bool  Router::ClearAll(){
-
-   cigorn::PlatformLockGuard lock(tablelock);
-RouteTable.insert(make_pair(i, NewEntry));
-   return true;
-
-}
-
-
-bool  Router::AddRoute(routeEntry  NewEntry){
-   int i = RouteTable.size()+1;  // The next map index for this entry
-
-  cigorn::PlatformLockGuard lock(tablelock);
-RouteTable.insert(make_pair(i, NewEntry));
-   return true;
-
-}
-bool Router::RouteMSG(BinaryEntry msg)
+bool Router::AddRoute(
+    int Format,
+    string srcif,
+    string dstif,
+    int lowID,
+    int upID)
 {
-    // existing setup code
+    routeEntry NewEntry;
+    int i = static_cast<int>(RouteTable.size()) + 1;
+
+    NewEntry.format = Format;
+    NewEntry.srcDevDes = srcif;
+    NewEntry.dstDevDes = dstif;
+    NewEntry.lowerID = lowID;
+    NewEntry.upperID = upID;
 
     {
-   
+        cigorn::PlatformLockGuard lock(tablelock);
+        RouteTable.insert(make_pair(i, NewEntry));
     }
 
-    // existing output and return code
+    return true;
 }
+
+bool Router::ClearAll()
+{
+    cigorn::PlatformLockGuard lock(tablelock);
+    RouteTable.clear();
+    return true;
+}
+
+bool Router::AddRoute(routeEntry NewEntry)
+{
+    int i = static_cast<int>(RouteTable.size()) + 1;
+
+    {
+        cigorn::PlatformLockGuard lock(tablelock);
+        RouteTable.insert(make_pair(i, NewEntry));
+    }
+
+    return true;
+}
+
 int Router::RouteCount(void){
 
     return RouteTable.size();
@@ -96,28 +96,26 @@ int Router::RouteCount(void){
 
 // Take the message Min that just came out of the inbound queue
 // and route it; if it is a routable protocol.
-bool Router::DoRouting(BinaryEntry Min){
+bool Router::DoRouting(BinaryEntry Min)
+{
+    switch (Min.format) {
+        case fmtASCII:
+        case fmtPRAVE:
+        case fmtWMX:
+        case fmtPageASCII:
+        case fmtWMXPOCSAG:
+            return DataRouter.RouteMSG(Min);
 
-        //cout << "Routing: " << < cBOLDITEM << msg.srcID << cNORMAL << " to " << Min.dstID << endl;
+        case fmtINVALID:
+        case fmtNMEA:
+        case fmtCigorn:
+        case fmtXML:
+        case fmtESRI_CSV1:
+            return false;
+    }
 
-        switch (Min.format){
-            case fmtASCII:
-            case fmtPRAVE:
-            case fmtWMX:
-            case fmtPageASCII:
-            case fmtWMXPOCSAG:
-                // Raveon PRAVE message came in
-                DataRouter.RouteMSG(Min);
-                break;
-            case fmtINVALID:
-            case fmtNMEA:
-            case fmtCigorn:
-            case fmtXML:
-            case fmtESRI_CSV1:
-                break;
-        }
+    return false;
 }
-
 
 // ****************************************************************************
 // The router function.  Loop through the entries in the route table
@@ -234,7 +232,7 @@ bool Router::RouteMSG(BinaryEntry msg){
             }
         }
     }
-
+ }
 
     // Output the debug text if there is any
     if (out.str().size() > 0){
@@ -402,7 +400,7 @@ routeEntry Router::RouteTableEntry(int i){
     std::stringstream ss;
     string s;
     routeEntry re;
-}
+
 cigorn::PlatformLockGuard lock(tablelock);           // route table lock
 
     // Loop through the route table to see if this message should be routed.
@@ -443,34 +441,39 @@ int Router::getDestinations(string sourceDeviceDesignator, vector<int>& deviceLi
     return foundCount;
 }
 
-string RouteHistoryToString(int count){
-
-
-
+string RouteHistoryToString(int count)
+{
+    return "";
 }
 
 // Create a string with all of the rout table entries
-string Router::RouteTableToText(void){
-     map<unsigned long, routehistory>::iterator it;
-     string s = "";
-     int i = 0;
+string Router::RouteTableToText(void)
+{
+    map<unsigned long, routehistory>::iterator it;
+    string s = "";
+    int i = 0;
 
-cigorn::PlatformLockGuard lock(tablelock);            // route table lock
+    {
+        cigorn::PlatformLockGuard lock(tablelock);
 
-    // Loop through the route table to see if this message should be routed.
-    for (i=1; i<= RouteTable.size(); i++){
-        s = s + "Route #" + intToString(i) + " ";
-        s = s + RouteTable[i].srcDevDes + " to " + RouteTable[i].dstDevDes;
-        s = s + " Format=" + ProtocolName(RouteTable[i].format);
-        if (RouteTable[i].lowerID >= 0){
-            s = s + " [" + intToString(RouteTable[i].lowerID) + " " + intToString(RouteTable[i].upperID) + "]";
+        for (i = 1; i <= RouteTable.size(); i++) {
+            s = s + "Route #" + intToString(i) + " ";
+            s = s + RouteTable[i].srcDevDes + " to " +
+                RouteTable[i].dstDevDes;
+            s = s + " Format=" +
+                ProtocolName(RouteTable[i].format);
+
+            if (RouteTable[i].lowerID >= 0) {
+                s = s + " [" +
+                    intToString(RouteTable[i].lowerID) + " " +
+                    intToString(RouteTable[i].upperID) + "]";
+            } else {
+                s = s + " [ALL]";
+            }
+
+            s = s + (char)'\r' + (char)NL;
         }
-        else{
-            s = s + " [ALL]";
-        }
-
-        s = s + (char)CR + (char)NL;
-    }
+    } // closes lock scope
 
     return s;
 }
@@ -560,20 +563,20 @@ bool  Router::RouteBinTo(int intf, char* txt, int n){
 // The destination interface for for the message must be set before calling this.
 bool  Router::RouteBinTo(BinaryEntry NewEntry){
   if (OurDevices.IsTTY(NewEntry.DstDevDesIndex)){
-       // This goes out the serial interface
-      pthread_mutex_lock(&qlock);     // Temporarily lock the queue so we can access it
-      qTTYout.push(NewEntry);         // add the new entry to the queue
-      pthread_mutex_unlock(&qlock);
+      {
+    cigorn::PlatformLockGuard lock(tablelock);
+
+    // protected code
+}
       routecount++;                   // count the number of messages we route
      // cout << "Routing to " << dest << " " << NewEntry.data << endl;
       return true;
   }else{
-      // This goes out the Socket interface <BinaryEntry> qTTYout;
-      pthread_mutex_lock(&qlock);     // Temporarily lock the queue so we can access it
-      //limit the number of entries in the Q l;
+      {
+    cigorn::PlatformLockGuard lock(tablelock);
 
-      qETHout.push(NewEntry);         // add the new entry to the queue
-      pthread_mutex_unlock(&qlock);
+    // protected code
+}
       routecount++;                   // count the number of messages we route
       return true;
   }

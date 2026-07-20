@@ -6,8 +6,14 @@
  */
 
 #ifndef NETWORK_H
-#define	NETWORK_H
+#define NETWORK_H
 
+#include <string>
+#include "platform/Platform.h"
+
+#ifdef _WIN32
+using in_addr_t = unsigned long;
+#endif
 // Prototype the functions
 int SetNetworkConfig(char *, in_addr_t , in_addr_t ,in_addr_t );
 in_addr_t IP2Broadcast(in_addr_t, in_addr_t);

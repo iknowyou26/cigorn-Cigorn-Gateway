@@ -7,9 +7,13 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 
-#include <Windows.h>
-#include <WinSock2.h>
-#include <WS2tcpip.h>
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <windows.h>
 
 #else
 
@@ -19,6 +23,6 @@
 #include <sys/time.h>
 #include <netdb.h>
 
-#endif
+#endif // _WIN32
 
-#endif
+#endif // CIGORN_PLATFORM_H

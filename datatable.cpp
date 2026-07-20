@@ -498,10 +498,11 @@ int  datatable::Import(datatable* Newtab){
 
 }
 
-int  datatable::Clear(void){  // erase the table contents
-
-        rows.clear();           // rows of fields in our table
-
+int datatable::Clear(void)
+{
+    const int count = static_cast<int>(rows.size());
+    rows.clear();
+    return count;
 }
 
 

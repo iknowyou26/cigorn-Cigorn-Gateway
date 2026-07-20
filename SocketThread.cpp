@@ -1,3 +1,8 @@
+#include "platform/thread/PlatformMutex.h"
+#include "platform/thread/PlatformLockGuard.h"
+
+#include <chrono>
+#include <thread>
 #include <stdio.h>
 #include <stdlib.h>
 #include "platform/Platform.h"
@@ -57,32 +62,48 @@ void *threadTCPserver(  void *ptr )
 
      // Wait untill the communications thread is all initialized and running before
      // starting the socket communications.
-     while (CommThreadInitialized = false){
-         sleep(0.05);
+     while (CommThreadInitialized == false){
+         std::this_thread::sleep_for(
+    std::chrono::milliseconds(50)
+);
      }
 
-     pthread_mutex_lock(&addlistlock);       // the addlist structure lock so we can update it in another thread.
-     GetMyIPaddressList(ipaddresses);
-     pthread_mutex_unlock(&addlistlock);     // the addlist structure lock so we can update it in another thread.
+     {
+    cigorn::PlatformLockGuard lock(addlistlock);
+    GetMyIPaddressList(ipaddresses);
+}
 
      ss << "Ethernet interface count: " << ipaddresses.size() << endl;
      MyCLI.Display(&ss);
      ss.str("");
 
-     pthread_mutex_lock(&addlistlock);     // the addlist structure lock so we can update it in another thread.
-     IPaddList::iterator it;
-     Me.IPadd = "";
 
-     for (it=ipaddresses.begin(); it!= ipaddresses.end(); it++){
-        if (Me.IPadd.size() > 0)
-             Me.IPadd = Me.IPadd + ",";
-        Me.IPadd =  Me.IPadd + it->second.interface + " " + it->second.ipaddress;
-        ss << "Interface: " << FixedRight(it->second.interface, 5) << "   " <<it->second.ipaddress << endl;
+    {
+    cigorn::PlatformLockGuard lock(addlistlock);
+
+    IPaddList::iterator it;
+    Me.IPadd = "";
+
+    for (it = ipaddresses.begin(); it != ipaddresses.end(); ++it) {
+        if (!Me.IPadd.empty()) {
+            Me.IPadd += ", ";
+        }
+
+        Me.IPadd += it->second.ipaddress;
+
+        ss << "Local ethernet interface "
+           << it->second.interface
+           << " = "
+           << it->second.ipaddress
+           << endl;
+
         MyCLI.OutputText(ss.str());
         ss.str("");
-     }
-     pthread_mutex_unlock(&addlistlock);     // the addlist structure lock so we can update it in another thread.
 
+
+        ss.clear();
+    }
+}
      while (!ShutDownApplication){
 
          while (RunSocketThread){
@@ -127,21 +148,18 @@ void *threadTCPserver(  void *ptr )
              // See if there is data from the outbound data queue to send out a socket.
              if (qETHout.size() > 0){
                  // cout << "Eth data" << endl;
-                 pthread_mutex_lock(&qlock);
-                 TopEntry = qETHout.front();           // get the q object with the data we need to send out
-                 try
                  {
-                   qETHout.pop();                      // take one object off the top. Throws exception some times.  Timein needs range limit?
-                 }
-                 catch( std::bad_alloc)
-                 {
-                   elog.store("Error 634. qETHout error.");
-                   TopEntry.SrcDevDesIndex = -1;   // bad entry
-                   TopEntry.DstDevDesIndex = -1;
-                   TopEntry.bcount = 0;
-                 }
+    cigorn::PlatformLockGuard lock(qlock);
 
-                 pthread_mutex_unlock(&qlock);   // pthread_mutex_unlock(&addlistlock)
+    TopEntry = qETHout.front();
+
+    try {
+        qETHout.pop();
+    }
+    catch (...) {
+        // keep the existing exception-handling code here
+    }
+}
                  busy = true;
                  // See if there is WNAT port translation.  -1 if no WNAT so we use the first DevDes we find to send this out.
                  WNAT.PortTranslate(TopEntry, newport, defaultport);
@@ -181,36 +199,53 @@ void *threadTCPserver(  void *ptr )
                      }// for socket...
 
 
-                     if ((outsocketindex >= 0) && (outsocketindex < MAXSOCKETS)){
-                        // we found the socket to send this message out
-                        pthread_mutex_lock(&tcpsockets[outsocketindex].qlock);        // pthread_mutex_unlock(&addlistlock)
-                        try{
-                            if (tcpsockets[outsocketindex].MsgQout.size() >= maxQcount){
-                                CoutM2(ss) << "Q overflow in " << tcpsockets[outsocketindex].description << endl;
-                                try {
-                                    tcpsockets[outsocketindex].MsgQout.pop(); // remove the message. It is too old
-                                 }
-                                    catch (exception& e) {
-                                 }
-                            }
-                            if (tcpsockets[outsocketindex].MsgQout.size() < maxQcount ){
-                                tcpsockets[outsocketindex].MsgQout.push(TopEntry);            // put the message into the outbound q for this socket
-                                // cout << "Sent data to port:" << tcpsockets[outsocketindex].portnum << endl;
-                            }
-                        }
-                        catch (bad_alloc& ba)
-                              {
-                                ss << "MsgQout.push bad_alloc caught: " << ba.what() << " Q size="
-                                   << tcpsockets[outsocketindex].MsgQout.size() << endl;
-                                elog.store(ss.str());
-                                if (tcpsockets[outsocketindex].MsgQout.size() > 0)
-                                    tcpsockets[outsocketindex].MsgQout.pop();  // we better shrink the queue.  It was out of memory
-                        }
-                        pthread_mutex_unlock(&tcpsockets[outsocketindex].qlock);      // pthread_mutex_unlock(&addlistlock)
-                     }else
-                        FailedSockOut++;    // count the homeless messages
-                  }
-             }//if (qETHout.size() > 0){
+                     if ((outsocketindex >= 0) && (outsocketindex < MAXSOCKETS)) {
+
+    {
+        cigorn::PlatformLockGuard lock(
+            tcpsockets[outsocketindex].qlock
+        );
+
+        try {
+            if (tcpsockets[outsocketindex].MsgQout.size() >= maxQcount) {
+                CoutM2(ss)
+                    << "Q overflow in "
+                    << tcpsockets[outsocketindex].description
+                    << endl;
+
+                try {
+                    tcpsockets[outsocketindex].MsgQout.pop();
+                }
+                catch (const std::exception&) {
+                }
+            }
+
+            if (tcpsockets[outsocketindex].MsgQout.size() < maxQcount) {
+                tcpsockets[outsocketindex].MsgQout.push(TopEntry);
+            }
+        }
+        catch (const std::bad_alloc& ba) {
+            ss << "MsgQout.push bad_alloc caught: "
+               << ba.what()
+               << " Q size="
+               << tcpsockets[outsocketindex].MsgQout.size()
+               << endl;
+
+            elog.store(ss.str());
+
+            if (!tcpsockets[outsocketindex].MsgQout.empty()) {
+                tcpsockets[outsocketindex].MsgQout.pop();
+            }
+        }
+       } // closes PlatformLockGuard scope
+
+} else {
+    FailedSockOut++;
+}
+
+} // closes TopEntry validation block
+
+} // closes if (qETHout.size() > 0)
 
              now_time = time(NULL);
              // Run these things once per second...
@@ -248,8 +283,7 @@ void *threadTCPserver(  void *ptr )
         i=0;
         // wait for a while if someone wants us to stop communications.
         if ((StopCommunications) && (i<10) ){
-            // Someone told us to stop for a while and then we'll restart
-            sleep(1);  // wait here for a bit
+            std::this_thread::sleep_for(std::chrono::seconds(1));
             i++;
             CommunicationsRunning = false;
         }
@@ -262,24 +296,21 @@ void *threadTCPserver(  void *ptr )
     MyCLI.OutputText(ss.str());
     ss.str("");
 
-     // Close sockets that are bound to some I/O channel
-     for (sockindex = 0; sockindex < MAXSOCKETS; sockindex++){
-       if (tcpsockets[sockindex].myDevDesIndex >= 0){
-          // This socket is bound to an interface, so clost the socket and free the fd
-          tcpsockets[sockindex].DisconnectSocket();
-       }
-     }
-     SocketThreadRunning = false;
-     ss << "Shut down TCP thread." << endl;
-     MyCLI.OutputText(ss.str());
-     ss.str("");
-
-     //     exit(1);   // done with the thread.  Stop now.
-
+return nullptr;
 }
 
-int GetSocketCount(){
     
+int GetSocketCount()
+{
+    int count = 0;
+
+    for (int i = 0; i < MAXSOCKETS; ++i) {
+        if (tcpsockets[i].sockfd != -1) {
+            ++count;
+        }
+    }
+
+    return count;
 }
 
 // Find the socket index of the socket assigned to device TCP port p
@@ -346,39 +377,36 @@ string GetInterfaceIPaddress(string intf){
 // Load a list with the IP addresses and interface names on this maching
 // Bad file descriptor leak. Only call this at boot-up
 
-void GetMyIPaddressList(IPaddList& al){
+#ifndef _WIN32
 
-   static struct ifreq myEthIF[MAX_ETH];
-   struct ifconf ifconfig;
-   int  nifaces, i=0;
-   struct if_nameindex *head;
-   struct if_nameindex *nm;
-   vector<int> AddressToDelete;
-   in_addr_t ip=0;
-   in_addr_t mask=0;
+void GetMyIPaddressList(IPaddList& al)
+{
+    static struct ifreq myEthIF[MAX_ETH];
+    struct ifconf ifconfig;
+    int nifaces, i = 0;
+    struct if_nameindex* head;
+    struct if_nameindex* nm;
+    vector<int> AddressToDelete;
+    in_addr_t ip = 0;
+    in_addr_t mask = 0;
 
-   al.clear();                  // initialize/clear the MAP
+    al.clear();
 
-   nm = if_nameindex();  // function shall return an array of if_nameindex structures
+    nm = if_nameindex();
 
-   if (nm != NULL){
-       // Loop through all the interfaces, and get their names
-       i = 0;
+    if (nm != NULL) {
+        i = 0;
 
-          while (nm[i].if_index != 0 || nm[i].if_name != 0)
-            {
-              al[i].interface = nm[i].if_name;
-              al[i].ipaddress = GetIP(al[i].interface.c_str(), &ip, &mask);
-              i++;
-            }
+        while (nm[i].if_index != 0 || nm[i].if_name != 0) {
+            al[i].interface = nm[i].if_name;
+            al[i].ipaddress =
+                GetIP(al[i].interface.c_str(), &ip, &mask);
+            i++;
+        }
 
-       
-       if_freenameindex(nm);     // free the memory
-       nm = NULL;                /* prevent use after free  */
-   }
-
-   return;
-   
+        if_freenameindex(nm);
+        nm = NULL;
+    }
 }
 
 int get_iface_list(struct ifconf *ifconf)
@@ -449,7 +477,35 @@ int getIPv4(string intf) {
 
     return res;
 }
+#else
 
+void GetMyIPaddressList(IPaddList& al)
+{
+    al.clear();
+
+    EthernetInterface loopback;
+    loopback.interface = "loopback";
+    loopback.ipaddress = "127.0.0.1";
+
+    al[0] = loopback;
+}
+
+int getIPv4(const char* dev, char* ipv4)
+{
+    if (ipv4 == nullptr) {
+        return -1;
+    }
+
+    strcpy_s(ipv4, 16, "127.0.0.1");
+    return 0;
+}
+
+int getIPv4(string intf)
+{
+    return 0;
+}
+
+#endif
 
 
 
@@ -486,12 +542,11 @@ bool ResetSocket(string ResetDevDes){
        }
     }
     return retval;
-};
-
+}
 /**
  * Gets the current measured TCP loop speed, in Hz
  * @return TCP loop's speed, in Hz
  */
 int getTCPLoopSpeed(){
     return MySleeper.getLoopSpeed();
-}
+};

@@ -1,575 +1,701 @@
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
 
-#include <string.h>
+#include <algorithm>
+#include <cctype>
+#include <ctime>
+#include <iostream>
 #include <string>
+
 #include "serialhandler.h"
-#include <fcntl.h>
-#include "Cigorn.h"     // Our application-specific constants and headers
-#include <termios.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <termio.h>
-#include <sys/fcntl.h>
+#include "Cigorn.h"
 #include "DeviceList.h"
-#include <linux/serial.h>
 
 using namespace std;
 
-// rs232 Class routines. Use to send data to and get data from the RS232 ports.
+namespace {
+
+HANDLE ToNativeHandle(std::intptr_t value)
+{
+    return reinterpret_cast<HANDLE>(value);
+}
+
+std::intptr_t FromNativeHandle(HANDLE value)
+{
+    return reinterpret_cast<std::intptr_t>(value);
+}
+
+bool IsHandleValid(std::intptr_t value)
+{
+    HANDLE handle = ToNativeHandle(value);
+
+    return handle != nullptr &&
+           handle != INVALID_HANDLE_VALUE;
+}
+
+void CloseSerialHandle(std::intptr_t& value)
+{
+    if (IsHandleValid(value)) {
+        CloseHandle(ToNativeHandle(value));
+    }
+
+    value = -1;
+}
+
+std::string NormalizeComPortName(const std::string& deviceName)
+{
+    if (deviceName.empty()) {
+        return {};
+    }
+
+    std::string name = deviceName;
+
+    // Remove a Linux-style device prefix if one is present.
+    const std::string linuxPrefix = "/dev/";
+    if (name.rfind(linuxPrefix, 0) == 0) {
+        name.erase(0, linuxPrefix.size());
+    }
+
+    // Preserve an already normalized Windows device path.
+    if (name.rfind("\\\\.\\", 0) == 0) {
+        return name;
+    }
+
+    // Convert ttyS0 to COM1, ttyS1 to COM2, etc.
+    if (name.rfind("ttyS", 0) == 0 && name.size() > 4) {
+        try {
+            const int linuxIndex = std::stoi(name.substr(4));
+            name = "COM" + std::to_string(linuxIndex + 1);
+        }
+        catch (...) {
+            return {};
+        }
+    }
+
+    // Windows requires the \\.\ prefix for COM10 and above.
+    std::string upperName = name;
+    std::transform(
+        upperName.begin(),
+        upperName.end(),
+        upperName.begin(),
+        [](unsigned char ch) {
+            return static_cast<char>(std::toupper(ch));
+        });
+
+    if (upperName.rfind("COM", 0) == 0) {
+        return "\\\\.\\" + upperName;
+    }
+
+    return "\\\\.\\" + name;
+}
+
+BYTE ConvertParity(char parity)
+{
+    switch (std::toupper(static_cast<unsigned char>(parity))) {
+        case 'E':
+            return EVENPARITY;
+
+        case 'O':
+            return ODDPARITY;
+
+        case 'M':
+            return MARKPARITY;
+
+        case 'S':
+            return SPACEPARITY;
+
+        case 'N':
+        default:
+            return NOPARITY;
+    }
+}
+
+BYTE ConvertStopBits(int stopBits)
+{
+    return stopBits == 2 ? TWOSTOPBITS : ONESTOPBIT;
+}
+
+} // namespace
 
 namespace Communications {
-    
-    // Initialize the class, default parameters. 38400, 8 data, 1, stop, No parity
-    rs232::rs232()
-        {
-        int i;
-            index = 0;              // unknown for now
-            myDevIndex = -1;
-            myDevType = dNONE;
-            baudrate = 38400;
-            bytes_in = 0;
-            bytes_out = 0;
-            stopbits = 1;
-            databits = 8;
-            parity = 'n';
-            flowcontrol = 'N';
-            bcl = false;
-            invertData = false;
-            handle = -1;         // The Linux file handle for this port
-            MyParser.rget = 0;
-            MyParser.rput = 0;
-            MyParser.rawdata[0]=NUL;
-            MyParser.ParsingPort = -1;  // unknown right now
-            localecho = false;
-            cts_in = false;
-            echo = true;         // the serial port char echo (loopback) setting.
-            devicename = "";
-            fullname="";
-            msg_in = 0;
-            msg_out = 0;
-            time_last_msg = time(NULL);
-            timeNextPageAllowed = 0;
-            busyChannelStartTime = 0;
-            bclState = WaitForCD;
-            timeOutputUnpaused = 0;
-            timeInputUnpaused = 0;
-            ShouldConnect = false;
-            ForceReset = false;
-        };
-    
-    // Initialize the class, given baud rate, paritys, databits, stops
-    rs232::rs232(int br, int d, int ns, char p)
-        {
-            baudrate = br;
-            bytes_in = 0;
-            bytes_out = 0;
-            stopbits = ns;
-            databits = d;
-            parity = p;
-            flowcontrol = 'N';
-            bcl = false;
-            invertData = false;
-            handle = -1;
-            MyParser.rget = 0;
-            MyParser.rput = 0;
-            MyParser.rawdata[0]=NUL;
-            MyParser.DefaultDstID = DEFAULT_ID;
-            MyParser.DefaultSrcID = DEFAULT_ID;
-            localecho = false;
-            cts_in = false;
-            msg_in = 0;
-            msg_out = 0;
-            time_last_msg = time(NULL);
-            timeNextPageAllowed = 0;
-            busyChannelStartTime = 0;
-            bclState = WaitForCD;
-            timeOutputUnpaused = 0;
-            timeInputUnpaused = 0;
-            ShouldConnect = false;
-            ForceReset = false;
-    };
 
- // Initialize tty port settings (PDS format for setings )
- bool   rs232::Configure(int br, string s)
-        {
-            int d;
-            int ns;
-            char p;
+// Initialize the class with 38400 baud, 8 data bits,
+// one stop bit and no parity.
+rs232::rs232()
+{
+    index = 0;
+    myDevIndex = -1;
+    myDevType = dNONE;
 
-            if (s.size() < 3)
-                return false;      // improper format
+    baudrate = 38400;
+    databits = 8;
+    stopbits = 1;
+    parity = 'N';
+    flowcontrol = 'N';
 
-            d = s.at(1) - '0';      // the data bits
-            ns = s.at(2) - '0';
-            p = toupper(s.at(0));
-            if (((d>=7) && (d<= 8) && (ns >= 1) && (ns <=2)) && ((p=='E') || (p=='O') || (p=='M') || (p=='N') || (p=='S'))){
-                 stopbits = ns;
-                 databits = d;
-                 parity = p;
-                 return true;
-            }
-            return false;
-        };
+    bcl = false;
+    invertData = false;
+    echo = true;
+    localecho = false;
 
-bool rs232::ReOpen() {
-    if(handle > 0){
-        // Technically, handle 0 should be allowed but we haven't tested
-        // all code paths here. Handle 0 is probably stdin
-        close(handle);
+    bytes_in = 0;
+    bytes_out = 0;
+    msg_in = 0;
+    msg_out = 0;
+
+    time_last_msg = time(nullptr);
+
+    devicename.clear();
+    fullname.clear();
+
+    handle = -1;
+
+    cts_in = false;
+    dsr_in = false;
+
+    MyParser.rget = 0;
+    MyParser.rput = 0;
+    MyParser.rawdata[0] = NUL;
+    MyParser.ParsingPort = -1;
+
+    timeNextPageAllowed = 0;
+    busyChannelStartTime = 0;
+    bclState = WaitForCD;
+
+    timeOutputUnpaused = 0;
+    timeInputUnpaused = 0;
+
+    ShouldConnect = false;
+    ForceReset = false;
+}
+
+// Initialize the class with specified communication parameters.
+rs232::rs232(int br, int d, int ns, char p)
+{
+    index = 0;
+    myDevIndex = -1;
+    myDevType = dNONE;
+
+    baudrate = br;
+    databits = d;
+    stopbits = ns;
+    parity = p;
+    flowcontrol = 'N';
+
+    bcl = false;
+    invertData = false;
+    echo = true;
+    localecho = false;
+
+    bytes_in = 0;
+    bytes_out = 0;
+    msg_in = 0;
+    msg_out = 0;
+
+    time_last_msg = time(nullptr);
+
+    devicename.clear();
+    fullname.clear();
+
+    handle = -1;
+
+    cts_in = false;
+    dsr_in = false;
+
+    MyParser.rget = 0;
+    MyParser.rput = 0;
+    MyParser.rawdata[0] = NUL;
+    MyParser.ParsingPort = -1;
+    MyParser.DefaultDstID = DEFAULT_ID;
+    MyParser.DefaultSrcID = DEFAULT_ID;
+
+    timeNextPageAllowed = 0;
+    busyChannelStartTime = 0;
+    bclState = WaitForCD;
+
+    timeOutputUnpaused = 0;
+    timeInputUnpaused = 0;
+
+    ShouldConnect = false;
+    ForceReset = false;
+}
+
+// Configure settings in PDS format, such as N81, E71 or O82.
+bool rs232::Configure(int br, string settings)
+{
+    if (settings.size() < 3) {
+        return false;
     }
-    
+
+    const char requestedParity =
+        static_cast<char>(std::toupper(
+            static_cast<unsigned char>(settings.at(0))));
+
+    const int requestedDataBits = settings.at(1) - '0';
+    const int requestedStopBits = settings.at(2) - '0';
+
+    if (requestedDataBits < 5 || requestedDataBits > 8) {
+        return false;
+    }
+
+    if (requestedStopBits < 1 || requestedStopBits > 2) {
+        return false;
+    }
+
+    if (requestedParity != 'E' &&
+        requestedParity != 'O' &&
+        requestedParity != 'M' &&
+        requestedParity != 'N' &&
+        requestedParity != 'S') {
+        return false;
+    }
+
+    baudrate = br;
+    databits = requestedDataBits;
+    stopbits = requestedStopBits;
+    parity = requestedParity;
+
+    return true;
+}
+
+bool rs232::ReOpen()
+{
+    CloseSerialHandle(handle);
     return OpenComPort();
-}    
+}
 
-    // Tries to open RS232 device ttySx.
-    // Return -1 if fails. Return device number if it does not fail.
-    // The baud rate must previously been set before calling this.
-bool rs232::OpenComPort(void)
-    {
-        ShouldConnect = true;
-    
-        struct termios options;          // The rs232 port option structure used in SerialPort.h
-        if (devicename.size()== 0)
-            return false;  // no device name, so quit. 
-        bytes_in = 0;
-        bytes_out = 0;
+bool rs232::OpenComPort()
+{
+    ShouldConnect = true;
+    ForceReset = false;
 
-        fullname = "/dev/" + devicename;
-        
-        // Open all the COM ports used on this device
-        handle = open(fullname.c_str() , O_RDWR | O_NOCTTY | O_NDELAY);
-        
-        if (handle == -1) {
-            // Error. Cannot open the port
-            return false;
-	} else {
-            // Opened OK.
-            fcntl(handle, F_SETFL, 0); //Set the file status flags part of the descriptor's flags to 0
-	}
-       if (handle >= 0){
-            tcgetattr(handle, &options);
-            switch (baudrate)
-            {
-                case 300:
-                   cfsetispeed(&options, B300);
-                   cfsetospeed(&options, B300);
-                   break;
-                case 1200:
-                   cfsetispeed(&options, B1200);
-                   cfsetospeed(&options, B1200);
-                   break;
-                case 2400:
-                   cfsetispeed(&options, B2400);
-                   cfsetospeed(&options, B2400);
-                   break;
-                case 4800:
-                   cfsetispeed(&options, B4800);
-                   cfsetospeed(&options, B4800);
-                   break;
-                case 9600:
-                   cfsetispeed(&options, B9600);
-                   cfsetospeed(&options, B9600);
-                   break;
-                case 19200:
-                   cfsetispeed(&options, B19200);
-                   cfsetospeed(&options, B19200);
-                   break;
-                case 38400:
-                   cfsetispeed(&options, B38400);
-                   cfsetospeed(&options, B38400);
-                   break;
-                case 57600:
-                   cfsetispeed(&options, B57600);
-                   cfsetospeed(&options, B57600);
-                   break;
-                case 115200:
-                   cfsetispeed(&options, B115200);
-                   cfsetospeed(&options, B115200);
-                   break;
-                case 230400:
-                   cfsetispeed(&options, B230400);
-                   cfsetospeed(&options, B230400);
-                   break;
-            }
-            // Apply the settings
-            /*
-            CRTSCTS : output hardware flow control (only used if the cable has
-                      all necessary lines. See sect. 7 of Serial-HOWTO)
-            CS8     : 8n1 (8bit,no parity,1 stopbit)
-            CLOCAL  : local connection, no modem contol
-            CREAD   : enable receiving characters
-            */
+    if (devicename.empty()) {
+        return false;
+    }
 
-            // Enable the receiver and set local mode...
-	    options.c_cflag |= (CLOCAL | CREAD);
-            options.c_cflag &= ~CSIZE;    // clear the size bits
+    bytes_in = 0;
+    bytes_out = 0;
 
-            int optflag = CS8;  // default to 8 data bits
-            switch (databits){
-                case 5:
-                    optflag = CS5;
-                    break;
-                case 6:
-                    optflag = CS6;
-                    break;
-                case 7:
-                    optflag = CS7;
-                    break;
-                case 8:
-                    optflag = CS8;
-                    break;
-            }
-            options.c_cflag |= optflag;
+    fullname = NormalizeComPortName(devicename);
+    if (fullname.empty()) {
+        return false;
+    }
 
-            if (stopbits == 2)
-                options.c_cflag |= CSTOPB;  // 2 stop bits
-            else
-               options.c_cflag &= ~CSTOPB;  // 1 stop bit
+    HANDLE serialHandle = CreateFileA(
+        fullname.c_str(),
+        GENERIC_READ | GENERIC_WRITE,
+        0,
+        nullptr,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        nullptr);
 
-            // Now configure parity
-    	    options.c_cflag &= ~PARENB;   // default to no parity
-            parity = toupper(parity);
-            switch (parity){
-                case 'N':
-           	    options.c_cflag &= ~PARENB;
-                    break;
-                case 'E':
-                    options.c_cflag |= PARENB;   // enable parity
-                    options.c_cflag &= ~PARODD;  // not odd (Even)
-                    break;
-                case 'O':
-                    options.c_cflag |= PARENB;  // enable parity
-                    options.c_cflag |= PARODD;  // odd parity
-                    break;
-                case 'M':
-                    // mark parity is simulated by two stop bits
-                    options.c_cflag &= ~PARENB;
-                    options.c_cflag |= CSTOPB;
-                    break;
-                case 'S':
-                    // space parity is setup the same as no parity
-                    options.c_cflag &= ~PARENB;
-                    break;
-            }
+    if (serialHandle == INVALID_HANDLE_VALUE) {
+        handle = -1;
+        return false;
+    }
 
-            switch (flowcontrol){
-                case 'H':
-                    options.c_cflag |= CRTSCTS;
-                    break;
-                default:
-                    options.c_cflag &= ~CRTSCTS;
-                    break;
-            }
-            
-            // Store the options
-            // options.c_lflag = ICANON;       // disable all echo functionality, and don't send signals to calling program
-            options.c_lflag = 0;            /* set input flag non-canonical, no processing, no echo */
-//            options.c_lflag = ICANON;       // disable all echo functionality, and don't send signals to calling program
-//            options.c_lflag &= ~ECHO;       /* disable echo */
-            options.c_iflag = IGNPAR;       /* ignore parity errors */
-            options.c_oflag = 0;            /* set output flag non-canonical, no processing */
-            options.c_cc[VTIME] = 0;        /* no time delay */
-            options.c_cc[VMIN] = 0;         /* no char delay */
+    handle = FromNativeHandle(serialHandle);
 
-            // Save the new attribute. Now.
-            if (tcsetattr(handle, TCSANOW, &options) < 0)
-                // Error handler. Cant set attributes.
-                return -1;
+    SetupComm(
+        serialHandle,
+        MAXSERIALBUFFSZ,
+        MAXSERIALBUFFSZ);
 
-            fcntl(handle, F_SETFL, FNDELAY);   // set the port to non-blocking reads
-  
-       }
+    DCB dcb{};
+    dcb.DCBlength = sizeof(dcb);
 
-       // Erase the data buffer
-       MyParser.rget = 0;
-       MyParser.rput = 0;
-       MyParser.rawdata[0]=NUL;
-       MyParser.ParsingPort = GetIntVal(devicename);   // Set to the ttyX serial port number
-       bytes_in = 0;
-       bytes_out = 0;
+    if (!GetCommState(serialHandle, &dcb)) {
+        CloseSerialHandle(handle);
+        return false;
+    }
 
-       if (handle >= 0)
-          return true;
-       else
-          return false;
+    dcb.BaudRate = static_cast<DWORD>(baudrate);
+    dcb.ByteSize = static_cast<BYTE>(databits);
+    dcb.Parity = ConvertParity(parity);
+    dcb.StopBits = ConvertStopBits(stopbits);
 
-    };
+    dcb.fBinary = TRUE;
+    dcb.fParity = dcb.Parity != NOPARITY;
 
-// read the status of the CTS input pin
-bool rs232::CTSin(void){
+    dcb.fOutxCtsFlow =
+        std::toupper(static_cast<unsigned char>(flowcontrol)) == 'H';
 
-    int bits;
+    dcb.fOutxDsrFlow = FALSE;
 
-    if (handle < 0){
+    dcb.fDtrControl = DTR_CONTROL_ENABLE;
+
+    dcb.fDsrSensitivity = FALSE;
+    dcb.fTXContinueOnXoff = TRUE;
+
+    dcb.fOutX = FALSE;
+    dcb.fInX = FALSE;
+
+    dcb.fErrorChar = FALSE;
+    dcb.fNull = FALSE;
+
+    dcb.fRtsControl =
+        dcb.fOutxCtsFlow
+            ? RTS_CONTROL_HANDSHAKE
+            : RTS_CONTROL_ENABLE;
+
+    dcb.fAbortOnError = FALSE;
+
+    if (!SetCommState(serialHandle, &dcb)) {
+        CloseSerialHandle(handle);
+        return false;
+    }
+
+    // Configure reads so that ReadFile returns immediately when
+    // no serial data is available.
+    COMMTIMEOUTS timeouts{};
+    timeouts.ReadIntervalTimeout = MAXDWORD;
+    timeouts.ReadTotalTimeoutMultiplier = 0;
+    timeouts.ReadTotalTimeoutConstant = 0;
+
+    timeouts.WriteTotalTimeoutMultiplier = 0;
+    timeouts.WriteTotalTimeoutConstant = 1000;
+
+    if (!SetCommTimeouts(serialHandle, &timeouts)) {
+        CloseSerialHandle(handle);
+        return false;
+    }
+
+    PurgeComm(
+        serialHandle,
+        PURGE_RXABORT |
+        PURGE_RXCLEAR |
+        PURGE_TXABORT |
+        PURGE_TXCLEAR);
+
+    MyParser.rget = 0;
+    MyParser.rput = 0;
+    MyParser.rawdata[0] = NUL;
+    MyParser.ParsingPort = GetIntVal(devicename);
+
+    bytes_in = 0;
+    bytes_out = 0;
+
+    return true;
+}
+
+bool rs232::CTSin()
+{
+    if (!IsHandleValid(handle)) {
         cts_in = false;
         return false;
     }
-    
-    if(ioctl(handle, TIOCMGET, &bits) < 0){
-        // Some error. Reset the port
+
+    DWORD modemStatus = 0;
+
+    if (!GetCommModemStatus(
+            ToNativeHandle(handle),
+            &modemStatus)) {
         ForceReset = true;
+        cts_in = false;
+        return false;
     }
 
-    if ((bits & TIOCM_CTS) > 0)
-        cts_in = true;
-    else
-        cts_in = false;
-
+    cts_in = (modemStatus & MS_CTS_ON) != 0;
     return cts_in;
 }
-// read the status of the CTS input pin
-bool rs232::DSRin(void){
 
-    int bits;
-
-    if (handle < 0){
+bool rs232::DSRin()
+{
+    if (!IsHandleValid(handle)) {
         dsr_in = false;
         return false;
     }
 
-    if(ioctl(handle, TIOCMGET, &bits) < 0){
-        // Some error. Reset the port
+    DWORD modemStatus = 0;
+
+    if (!GetCommModemStatus(
+            ToNativeHandle(handle),
+            &modemStatus)) {
         ForceReset = true;
+        dsr_in = false;
+        return false;
     }
 
-    if ((bits & TIOCM_DSR) >= 0) {	// 08-02	Change from '> 0'. Allowed Cigorn on MiniBox to detect serial ports
-        dsr_in = true;	
-    }
-    else {    
-	dsr_in = false;
-    }
-
+    dsr_in = (modemStatus & MS_DSR_ON) != 0;
     return dsr_in;
 }
 
-/**
- * Read the status of the CD pin
- * @return True if CD is high
- */
-bool rs232::CDin(void){
-    int bits;
-
-    if (handle < 0){
+bool rs232::CDin()
+{
+    if (!IsHandleValid(handle)) {
         return false;
     }
 
-    if(ioctl(handle, TIOCMGET, &bits) < 0){
-        // Some error. Reset the port
+    DWORD modemStatus = 0;
+
+    if (!GetCommModemStatus(
+            ToNativeHandle(handle),
+            &modemStatus)) {
         ForceReset = true;
+        return false;
     }
 
-    if ((bits & TIOCM_CD) != 0)
-        return true;
-    else
-        return false;
+    return (modemStatus & MS_RLSD_ON) != 0;
 }
 
-void rs232::setIncomingFlowStatus(bool allowInboundFlow){
-    int rtsBit = TIOCM_RTS;
-    int result;
-    if(allowInboundFlow){
-        result = ioctl(handle, TIOCMBIS, &rtsBit);
-    }else{
-        result = ioctl(handle, TIOCMBIC, &rtsBit);
+void rs232::setIncomingFlowStatus(bool allowInboundFlow)
+{
+    if (!IsHandleValid(handle)) {
+        return;
     }
-    
-    if(result < 0){
-        // Some error. Reset the port
+
+    const DWORD function =
+        allowInboundFlow ? SETRTS : CLRRTS;
+
+    if (!EscapeCommFunction(
+            ToNativeHandle(handle),
+            function)) {
         ForceReset = true;
     }
 }
 
-/**
- * Gets the number of bytes in the serial ports output queue at the OS level.
- * @return Queued byte count
- */
-int rs232::queuedBytes(void){
-    int queueLength;
-    
-    if(ioctl(handle, TIOCOUTQ, &queueLength) < 0){
-        // Some error. Reset the port
-        ForceReset = true;
-    }
-    
-    if(queueLength < 0){
+int rs232::queuedBytes()
+{
+    if (!IsHandleValid(handle)) {
         return 0;
     }
-}
 
-// Output a string to the RS232 serial port
-int rs232::SendString(std::string S)
- {
-     int bytes_written;
-     int i;
+    DWORD errors = 0;
+    COMSTAT status{};
 
-     if (handle == -1)
-         return -1;  // This port is not open.
-
-     for (i=0; i< S.size(); i++)
-         S[i] = S[i] & 0x7f;   // not control chars
-     
-     // Write the string to the serial port
-     bytes_written = write(handle, S.c_str(), S.size());
-     bytes_out += bytes_written;                       // count the bytes we send out
- 
-     msg_out++;  // count this message
-
-     // cout << S;
-     return bytes_written;
-
- }
-
-// Send count number of bytes from the *bytes array.
-int rs232::SendBytes(char *bytes, int count){
-
-     int bytes_written = 0;
-     int pointer = 0;
-     //int y;
-     if (handle == -1)
-         return -1;  // This port is not open.
-
-     if (count > MAXSERIALBUFFSZ)
-         return -1;    // too much to send at one time
-     
-     // Write the data bytes to the serial port
-     while (pointer < count){
-        //y = bytes[pointer];
-        int bytesOut = write(handle, &bytes[pointer], 1);  // one byte at a time to the serial port
-        if(bytesOut != 1){
-            cout << "Failed to write to serial. Data has been lost!";
-        }
-        bytes_written += bytesOut;
-        pointer++;
-        bytes_out++;
-       // cout << bytes[pointer]; // count the bytes we send out
-        //cout << IntToHex(y, 2) << " ";
-     }
-     msg_out++;  // count this message
-
-     //cout << endl;
-     return bytes_written;
-}
-
-    // Get a singe charactor from the buffer. Return false if none available
-    bool rs232::GetChar(char* c){
-
-       char buffer[255];  /* Input buffer */
-       int  nbytes;       /* Number of bytes read */
- 
-
-       /* read characters into our string buffer until we get a CR or NL */
-       nbytes = read(handle, &buffer[0], 1);
-
-       /* nul terminate the string and see if we got an OK response */
-       if (nbytes > 0){
-            *c = buffer[0];
-            if (localecho)
-                cout << *c;
-            time_last_msg = time(NULL);   // remember this time
-
-            return true;
-        }
-       else
-         return false;
+    if (!ClearCommError(
+            ToNativeHandle(handle),
+            &errors,
+            &status)) {
+        ForceReset = true;
+        return 0;
     }
 
-    // Poll the serial port, and load-up the buffer with data if there is some comming in.
-   int rs232::GetChars(void){
+    return static_cast<int>(status.cbOutQue);
+}
 
-       int  nbytes;       /* Number of bytes read */
-       bool done = false;
-       char buffer[260];
-       int  bytesread = 0;
-
-       while ((done == false) && (bytesread < 255)) {
-           // read characters into our string buffer
-           nbytes = read(handle, &buffer[bytesread], 1);
-           if (nbytes > 0){
-               bytes_in = bytes_in + nbytes;
-               bytesread = bytesread + nbytes;
-               time_last_msg = time(NULL);   // remember this time
-           }else if(nbytes < 0){
-               // Some read error. Re-init the port
-               ForceReset = true;
-               
-               done = true;
-           }else{
-               done = true;
-           }
-       }
-       if(bytesread == 255){
-           cout << "Hit byte processing limit at " << devicename << endl;
-       }
-
-       if(isInputPaused()){
-           // Discard the data and continue
-           return bytesread;
-       }
-       
-       if (bytesread > 0){
-           //cout << "B:" << buffer;
-           buffer[bytesread] = NUL; // make sure we are null terminated.
-           if (localecho)
-              cout << buffer;
-           msg_in = msg_in + MyParser.parse(buffer, bytesread, myDevIndex, myDevType);   // parse the data
-       }
-       return  bytesread;
-   }
-
-
-// return the number of hours since last message
-double rs232::ActivityTime(void){
-    double d;
-    int i;
-
-    if (bytes_in == 0)
+int rs232::SendString(std::string value)
+{
+    if (!IsHandleValid(handle)) {
         return -1;
+    }
 
-    time_t time_here = time(NULL);          // The time we got the last message in from this port
+    for (char& character : value) {
+        character =
+            static_cast<char>(
+                static_cast<unsigned char>(character) & 0x7F);
+    }
 
-    d = difftime(time_here, time_last_msg)/(60 * 60);
+    if (value.empty()) {
+        msg_out++;
+        return 0;
+    }
 
-    return d;
+    DWORD bytesWritten = 0;
+
+    if (!WriteFile(
+            ToNativeHandle(handle),
+            value.data(),
+            static_cast<DWORD>(value.size()),
+            &bytesWritten,
+            nullptr)) {
+        ForceReset = true;
+        return -1;
+    }
+
+    bytes_out += static_cast<long>(bytesWritten);
+    msg_out++;
+
+    return static_cast<int>(bytesWritten);
 }
 
-    bool rs232::isInputPaused(){
-        return TimeNow() < timeInputUnpaused;
+int rs232::SendBytes(char* bytes, int count)
+{
+    if (!IsHandleValid(handle)) {
+        return -1;
     }
 
-    bool rs232::isOutputPaused(){
-        return TimeNow() < timeOutputUnpaused;
+    if (bytes == nullptr ||
+        count < 0 ||
+        count > MAXSERIALBUFFSZ) {
+        return -1;
     }
 
-    /**
-     * Pauses input until the specified time. If input is already paused
-     * for a greater amount of time than this would cause input to be paused
-     * for, has no effect. If input is paused but would end before unpauseTime,
-     * extends the pause duration to unpauseTime
-     * @param unpauseTime Time to pause input for
-     */
-    void rs232::pauseInputUntil(double unpauseTime){
-        if(unpauseTime > timeInputUnpaused){
-            timeInputUnpaused = unpauseTime;
+    if (count == 0) {
+        msg_out++;
+        return 0;
+    }
+
+    DWORD totalWritten = 0;
+
+    while (totalWritten < static_cast<DWORD>(count)) {
+        DWORD writtenThisPass = 0;
+
+        if (!WriteFile(
+                ToNativeHandle(handle),
+                bytes + totalWritten,
+                static_cast<DWORD>(count) - totalWritten,
+                &writtenThisPass,
+                nullptr)) {
+            ForceReset = true;
+            return totalWritten > 0
+                ? static_cast<int>(totalWritten)
+                : -1;
         }
-    }
-    
-    /**
-     * Same effect as @see pauseInputUntil(), for output.
-     * @param unpauseTime Time to pause input for
-     */
-    void rs232::pauseOutputUntil(double unpauseTime){
-        if(unpauseTime > timeOutputUnpaused){
-            timeOutputUnpaused = unpauseTime;
+
+        if (writtenThisPass == 0) {
+            break;
         }
+
+        totalWritten += writtenThisPass;
     }
 
-    void rs232::unpauseInput(){
-        timeInputUnpaused = 0;
+    bytes_out += static_cast<long>(totalWritten);
+    msg_out++;
+
+    return static_cast<int>(totalWritten);
+}
+
+bool rs232::GetChar(char* character)
+{
+    if (character == nullptr ||
+        !IsHandleValid(handle)) {
+        return false;
     }
 
-    void rs232::unpauseOutput(){
-        timeOutputUnpaused = 0;
+    char buffer = NUL;
+    DWORD bytesRead = 0;
+
+    if (!ReadFile(
+            ToNativeHandle(handle),
+            &buffer,
+            1,
+            &bytesRead,
+            nullptr)) {
+        ForceReset = true;
+        return false;
+    }
+
+    if (bytesRead == 0) {
+        return false;
+    }
+
+    *character = buffer;
+
+    bytes_in += static_cast<long>(bytesRead);
+    time_last_msg = time(nullptr);
+
+    if (localecho) {
+        cout << *character;
+    }
+
+    return true;
+}
+
+int rs232::GetChars()
+{
+    if (!IsHandleValid(handle)) {
+        return 0;
+    }
+
+    char buffer[260]{};
+    int bytesReadTotal = 0;
+
+    while (bytesReadTotal < 255) {
+        DWORD bytesRead = 0;
+
+        if (!ReadFile(
+                ToNativeHandle(handle),
+                &buffer[bytesReadTotal],
+                1,
+                &bytesRead,
+                nullptr)) {
+            ForceReset = true;
+            break;
+        }
+
+        if (bytesRead == 0) {
+            break;
+        }
+
+        bytesReadTotal += static_cast<int>(bytesRead);
+        bytes_in += static_cast<long>(bytesRead);
+        time_last_msg = time(nullptr);
+    }
+
+    if (bytesReadTotal == 255) {
+        cout << "Hit byte processing limit at "
+             << devicename
+             << endl;
+    }
+
+    if (isInputPaused()) {
+        return bytesReadTotal;
+    }
+
+    if (bytesReadTotal > 0) {
+        buffer[bytesReadTotal] = NUL;
+
+        if (localecho) {
+            cout.write(buffer, bytesReadTotal);
+        }
+
+        msg_in += MyParser.parse(
+            buffer,
+            bytesReadTotal,
+            myDevIndex,
+            myDevType);
+    }
+
+    return bytesReadTotal;
+}
+
+double rs232::ActivityTime()
+{
+    if (bytes_in == 0) {
+        return -1;
+    }
+
+    const time_t currentTime = time(nullptr);
+
+    return difftime(currentTime, time_last_msg) /
+           (60.0 * 60.0);
+}
+
+bool rs232::isInputPaused()
+{
+    return TimeNow() < timeInputUnpaused;
+}
+
+bool rs232::isOutputPaused()
+{
+    return TimeNow() < timeOutputUnpaused;
+}
+
+void rs232::pauseInputUntil(double unpauseTime)
+{
+    if (unpauseTime > timeInputUnpaused) {
+        timeInputUnpaused = unpauseTime;
     }
 }
+
+void rs232::pauseOutputUntil(double unpauseTime)
+{
+    if (unpauseTime > timeOutputUnpaused) {
+        timeOutputUnpaused = unpauseTime;
+    }
+}
+
+void rs232::unpauseInput()
+{
+    timeInputUnpaused = 0;
+}
+
+void rs232::unpauseOutput()
+{
+    timeOutputUnpaused = 0;
+}
+
+} // namespace Communications

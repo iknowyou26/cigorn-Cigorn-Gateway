@@ -1,3 +1,4 @@
+#include "platform/PlatformConstants.h"
 /* 
  * File:   logger.cpp
  * Author: john
@@ -154,6 +155,7 @@ bool logger::closeLog(void){
     return true;
 
 }
+
 
 
 

@@ -14,7 +14,7 @@
 #include <iostream>
 #include <stdlib.h>   
 #include <stdio.h>
-#include <pthread.h>
+#include "platform/Platform.h"
 #include <queue>
 #include <exception>
 #include "limits.h"

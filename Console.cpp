@@ -2,20 +2,27 @@
 // ConsoleThread.cpp
 //
 // **************************************************************
-
+#include <thread>
+#include <chrono>
 #include <iostream>
 #include <string>
 #include <stdlib.h>   // Required by malloc()
 #include <stdio.h>
-#include <pthread.h>
+#include "platform/Platform.h"
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 #include "Cigorn.h"     // Our application-specific constants
 #include "serialhandler.h"
 #include "CommandLine.h"
 #include "microsleeper.h"
 #include "Console.h"
-
+#ifdef _WIN32
+#ifndef STDIN_FILENO
+#define STDIN_FILENO 0
+#endif
+#endif
 // Local prototypes
 
 using namespace std;
@@ -34,7 +41,9 @@ void *threadConsole( void *ptr )
 
     last_time = time(NULL);
 
-    sleep(0.05);  // wait for the main loop to get running and finish its initialization
+    std::this_thread::sleep_for(
+    std::chrono::milliseconds(50)
+);
     MyCLI.MySocket.sendtext(CLI_PROMPT);
 
     cout << "CLI running" << "\r\n";
@@ -55,13 +64,13 @@ void *threadConsole( void *ptr )
         if (MyCLI.GetNewCommand(&s)){
             // A new command came in
             // cout << "Command in: '" << s << "'  Num of bytes=" << s.size() << " First=" << (int)s[0] << " Second=" << (int)s[1]<< endl;
-            if ( s.size() == 2 && s[0]==ESC && s[1] == CR)
+            if ( s.size() == 2 && s[0]==ESC && s[1] == '\r')
                 s = LastCommand;  // repeat the last command
             else
                 s = trim(s);
             
             // See if we should translate NL to CRLF on UNIX machines
-            if (MyCLI.MySocket.MyParser.EndOfLineChar == CR){
+            if (MyCLI.MySocket.MyParser.EndOfLineChar == '\r'){
                 // Unix type terminal. Turn echo on.
                 MyCLI.MySocket.NLtoCRLF = true;
                 MyCLI.MySocket.echoinput = true;

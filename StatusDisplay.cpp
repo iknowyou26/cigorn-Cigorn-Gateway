@@ -1,10 +1,11 @@
 /* 
  * File:   StatusDisplay.cpp
- * Author: john
+ * Author: Ryan Le
  * 
- * Created on August 14, 2010, 8:14 AM
+ * Created on July17, 2026, 8:14 AM
  */
-
+#include "platform/thread/PlatformMutex.h"
+#include "platform/thread/PlatformLockGuard.h"
 #include "StatusDisplay.h"
 #include "serialhandler.h"
 #include "Cigorn.h"
@@ -162,15 +163,18 @@ void StatusDisplay::HomeScreen (int redraw){
         IPaddList::iterator it;
         IPaddList al;  // make a copy because it is manipulated in a background task
 
-        pthread_mutex_lock(&addlistlock);     // the addlist structure lock so we can update it in another thread.
-        for (it=ipaddresses.begin(); it!= ipaddresses.end(); it++){
-            if (x == display_line){
-                MyLCD.PlaceString(it->second.interface, 1, 7, 0);  // Line 7
-                MyLCD.PlaceString(it->second.ipaddress, i, 7, 0);  // Line 7
-            }
-            x++;
-         }
-        pthread_mutex_unlock(&addlistlock);     // the addlist structure lock so we can update it in another thread.
+
+    {
+    cigorn::PlatformLockGuard lock(addlistlock);
+
+    for (it = ipaddresses.begin(); it != ipaddresses.end(); ++it) {
+        if (x == display_line) {
+            MyLCD.PlaceString(it->second.interface, 1, 7, 0);  // Line 7
+            MyLCD.PlaceString(it->second.ipaddress, i, 7, 0);   // Line 7
+        }
+        x++;
+    }
+}
 
  
     }

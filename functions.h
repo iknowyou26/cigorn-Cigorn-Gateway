@@ -9,7 +9,7 @@
 #ifndef _FUNCTIONS_
 #define	_FUNCTIONS_
 #include <string>
-#include <sys/time.h>
+#include "platform/Platform.h"
 #include <queue>
 using namespace std;
 

@@ -12,7 +12,7 @@
 #include <queue>
 #include <string>
 #include <map>
-#include "/usr/include/postgresql/libpq-fe.h"
+#include <libpq-fe.h>
 #include "functions.h"
 
 using namespace std;
@@ -45,4 +45,5 @@ string  datarow::RowState(void){
     }
     return "Unknown";
 }
+
 

@@ -1,7 +1,81 @@
+// Various network-related subroutines
 
+#ifdef _WIN32
+
+#include "network.h"
+
+#include <string>
+
+int SetNetworkConfig(
+    char*,
+    in_addr_t,
+    in_addr_t,
+    in_addr_t)
+{
+    // Linux implementation modifies /etc/sysconfig and restarts networking.
+    // Windows support will be implemented separately.
+    return -1;
+}
+
+in_addr_t IP2Broadcast(in_addr_t ip, in_addr_t mask)
+{
+    return ip | ~mask;
+}
+
+in_addr_t IP2Network(in_addr_t ip, in_addr_t mask)
+{
+    return ip & mask;
+}
+
+in_addr_t ValidateMask(in_addr_t mask)
+{
+    return mask;
+}
+
+std::string GetIP(
+    const char*,
+    in_addr_t* ip,
+    in_addr_t* mask)
+{
+    if (ip != nullptr)
+        *ip = 0;
+
+    if (mask != nullptr)
+        *mask = 0;
+
+    return std::string();
+}
+
+static int set_default_gw(int, in_addr_t)
+{
+    return -1;
+}
+
+void UpdateIP(
+    const char*,
+    in_addr_t,
+    in_addr_t,
+    in_addr_t)
+{
+    // Not supported by this initial Windows compatibility implementation.
+}
+
+int GetMacAddress(char*, char*)
+{
+    return -1;
+}
+
+int SetMacAddress(char*, char*)
+{
+    return -1;
+}
+
+#else
 // Various network related subroutines
 #include <stdio.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <sstream>
 #include <iostream>
 #include <stdio.h>
@@ -294,3 +368,5 @@ return 0;
 
 
 
+
+#endif // _WIN32

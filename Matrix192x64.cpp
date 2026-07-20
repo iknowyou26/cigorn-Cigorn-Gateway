@@ -5,12 +5,14 @@
  * Created on August 14, 2010, 12:03 AM
  */
 
+#include "platform/Platform.h"
+
 #include "serialhandler.h"
-#include "Cigorn.h"     // Our application-specific constants
+#include "Cigorn.h"
 #include "Matrix192x64.h"
 #include "StatusDisplay.h"
-#include <sstream>
 
+#include <sstream>
 
 MatrixDisplay::MatrixDisplay(void) {
     

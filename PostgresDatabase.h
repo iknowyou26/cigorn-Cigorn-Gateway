@@ -2,7 +2,7 @@
 #define POSTGRESDATABASE_H
 
 #include "IDatabase.h"
-#include "/usr/include/postgresql/libpq-fe.h"
+#include <libpq-fe.h>
 #include <string>
 
 class PostgresDatabase : public IDatabase
@@ -27,3 +27,4 @@ private:
 };
 
 #endif
+

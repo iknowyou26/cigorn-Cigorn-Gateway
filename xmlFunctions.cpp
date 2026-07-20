@@ -12,8 +12,6 @@
 #include <string.h>   // Required by strcpy()
 #include <stdlib.h>   // Required by malloc()
 #include <stdio.h>
-#include <sys/socket.h>
-
 #include <limits>
 
 #include "Cigorn.h"     // Our application-specific constants

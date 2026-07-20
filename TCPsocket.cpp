@@ -5,9 +5,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "platform/Platform.h"
-
+#include "platform/socket/PlatformSocket.h"
+#include "platform/time/PlatformTime.h"
+#include "platform/thread/PlatformMutex.h"
+#include "platform/PlatformConstants.h"
 #include <string>
-
 #ifndef _WIN32
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -34,12 +36,10 @@
 
 using namespace std;
 
-int getaddrinfo(const char *nodename, const char *servname,
-                const struct addrinfo *hints, struct addrinfo **res);
 
-void freeaddrinfo(struct addrinfo *ai);
-const char *gai_strerror(int ecode);
+#ifndef _WIN32
 int get_iface_list(struct ifconf *);
+#endif
 
 int ethcount = 0;
 
@@ -57,7 +57,7 @@ tcpnet::~tcpnet() {
 }
 
 void tcpnet::clear(void) {
-    sockfd = -1;
+    sockfd = CIGORN_INVALID_SOCKET;
     connected = false;
     myDevDesIndex = -1;        // indicates not bound to any device designator yet.
     myDevType = -1;
@@ -84,7 +84,7 @@ void tcpnet::clear(void) {
     time_last_activity = time(NULL);
     client_tries = 0;
     session_bytes_out = 0;
-    pthread_mutex_t txbufflock;     // Lock for the tx data buffer
+
     echoinput = false;
     NLtoCRLF = false;               // by default, no translation.
     enable_keepalive = false;       // be deafault, don't send keep alives.
@@ -101,7 +101,7 @@ int tcpnet::tcp_socket() {
      struct adr_clnt; // AF_INET
      socklen_t slt;
      int n=0;
-     int rdflags = MSG_DONTWAIT;  // Ensure all reads are nonblocking
+     int rdflags = 0;  // Socket is configured as non-blocking by PlatformSocket
      struct sockaddr_in adr;      // AF_INET
      int retval = -1;   // -1 not connected, 0=no data, > 0 number of bytes txed or rxed
      double tmout = 0;
@@ -122,16 +122,11 @@ int tcpnet::tcp_socket() {
         }
         return -1;   //
     }
-
-    // Safety check to verify that the socket is still nonblocking. Should
-    // never happen
-    int socketFlags = fcntl(sockfd, F_GETFL);
-    if (socketFlags < 0 || !(socketFlags & O_NONBLOCK)){
-        // Non-blocking is not set. Bail
+    // Socket validity check. Non-blocking mode is configured when created.
+    if (sockfd == CIGORN_INVALID_SOCKET) {
         DisconnectSocket();
         return -1;
     }
-
     switch (protocol){
         case pServer:
             // See if this socket is communicating with another host
@@ -318,7 +313,7 @@ int tcpnet::tcp_socket() {
      
 
      // We are connected, so take messages out of the q and put them in the data buffer for transmission
-     pthread_mutex_lock(&qlock);  // Lock the q while we manipulate it
+     qlock.lock();  // Lock the q while we manipulate it
      if (MsgQout.size() > 0 && !isOutputPaused()){
          // There is a message for us to send out the socket
          // CoutM2(skout) << " Q size= " << MsgQout.size() << endl;
@@ -344,21 +339,21 @@ int tcpnet::tcp_socket() {
 	     }
          }
      }
-     pthread_mutex_unlock(&qlock); // unlock it
+     qlock.unlock(); // unlock it
 
      // Integrety check
      if (txcount > MAXBUFSIZE){
          // Very bad. FLush the buffer
-         pthread_mutex_lock(&txbufflock);
+         txbufflock.lock();
          txcount = 0;
          rxbuff[0] = NUL;
-         pthread_mutex_unlock(&txbufflock);
+         txbufflock.unlock();
      }
 
      // See if it is time to send some data out
      if (txcount > 0){
         // There is data to send
-        pthread_mutex_lock(&txbufflock);
+        txbufflock.lock();
         // cout << description <<  " Dx:" <<  txcount << endl;
         txbuff[txcount] = NUL;  // null terminate it
         if (localecho)
@@ -366,10 +361,10 @@ int tcpnet::tcp_socket() {
 
         switch (protocol){
             case pServer:
-                n = write(newsockfd, txbuff, txcount);   // might not write all the data  TODO
+                n = CigornSend(newsockfd, txbuff, txcount);   // might not write all the data  TODO
                 break;
             case pClient:
-                n = write(newsockfd, txbuff, txcount);   // might not write all the data  TODO
+                n = CigornSend(newsockfd, txbuff, txcount);   // might not write all the data  TODO
                 break;
            case pDGRAMTX:
                 slt = sizeof(CliAddr);
@@ -381,10 +376,10 @@ int tcpnet::tcp_socket() {
                 }
                 break;
            case pDGRAMRX:
-                n = write(sockfd, txbuff, txcount);   // might not write all the data  TODO
+                n = CigornSend(sockfd, txbuff, txcount);   // might not write all the data  TODO
                 break;
             default:
-                n = write(newsockfd, txbuff, txcount);   // might not write all the data  TODO
+                n = CigornSend(newsockfd, txbuff, txcount);   // might not write all the data  TODO
         }
 
         //CoutM2(skout) << " Data sent to " << ConnectedToIP << " on:" << description << " txcount=" << txcount << "  n=" << n << endl;
@@ -401,7 +396,7 @@ int tcpnet::tcp_socket() {
             bytes_out += n;     // count the number of bytes we send out the socket
             retval = n;
         }
-        pthread_mutex_unlock(&txbufflock);
+        txbufflock.unlock();
      }
      MyCLI.Display(&sockconsoleout);   // output the string to the Command-Line user and then erase it.
 
@@ -424,15 +419,15 @@ bool tcpnet::initialize_socket(){
 
      // Reset the statistics for this socket
      if (newsockfd >= 0){
-        shutdown(newsockfd, SHUT_RDWR);
-        if (close(newsockfd) != 0){
+        CigornShutdownSocket(newsockfd);
+        if (CigornCloseSocket(newsockfd) != 0){
             // Failed to close socket
             // cout << "Failed to close client connection socket " << << " fd:" << newsockfd << endl;
         };
      }
      if (sockfd >= 0){
-        shutdown(sockfd, SHUT_RDWR);
-        if (close(sockfd) != 0){
+        CigornShutdownSocket(sockfd);
+        if (CigornCloseSocket(sockfd) != 0){
             // Failed to close socket
             // cout << "Failed to close socket " << sockfd << endl;
         };
@@ -530,7 +525,7 @@ bool tcpnet::initialize_socket(){
     // The IP address of the interface we want to use
     myadd = inet_addr(myIP4.c_str());
 
-    pthread_mutex_lock(&socklock);              // lock the sockets while we manipulate them
+    socklock.lock();              // lock the sockets while we manipulate them
 
     char s[INET6_ADDRSTRLEN];
 
@@ -543,30 +538,24 @@ bool tcpnet::initialize_socket(){
               // cout << "Can't create socket for port " << portnum << endl;
                continue;
            }
-
-           // Chad 4-11
-           int n = fcntl(sockfd,F_GETFL,0);
-
-           if (fcntl(sockfd, F_SETFL, n | O_NONBLOCK) == -1){  // Chad 4-11
-                 // We failed to create a non-blocking socket. Clear and
-                 // try next servinfo
-                 shutdown(sockfd, SHUT_RDWR);
-                 close(sockfd);
-                 sockfd = -1;
+           // Configure the socket for non-blocking operation.
+           if (CigornSetNonBlocking(sockfd, true) != 0) {
+                 CigornShutdownSocket(sockfd);
+                 CigornCloseSocket(sockfd);
+                 sockfd = CIGORN_INVALID_SOCKET;
                  //CoutM2(skout) << "Cant init socket for " << description << endl;
-                 continue;                     // we must be non-blocking. fail.
+                 continue;
            }
-
-           if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+           if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&yes), static_cast<int>(sizeof(yes))) == -1) {
                 CoutM2(sockconsoleout) << "Cant get socket options for "  <<  description << " on my port " << portnum << endl;
                 MyCLI.Display(&sockconsoleout);
                 break;
            }else{
                 // Seems the socket is OK and can be configured.  
                 // Set the linger option.  no=dump all data when closing.
-                setsockopt(newsockfd, SOL_SOCKET, SO_LINGER, &no, sizeof(int));
+                setsockopt(newsockfd, SOL_SOCKET, SO_LINGER, reinterpret_cast<const char*>(&no), static_cast<int>(sizeof(no)));
                 if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-                   if (close(sockfd) != 0){
+                   if (CigornCloseSocket(sockfd) != 0){
                       // Failed to close socket
                       CoutM2(sockconsoleout) << "Failed to close socket on port" << portnum << " fd:" << newsockfd << endl;
                       MyCLI.Display(&sockconsoleout);
@@ -584,7 +573,7 @@ bool tcpnet::initialize_socket(){
           }
         } // for...
 
-       pthread_mutex_unlock(&socklock);  // unlock the socket
+       socklock.unlock();  // unlock the socket
 
        if (p == NULL)  {
             // Failed
@@ -622,9 +611,9 @@ bool tcpnet::initialize_socket(){
                     optval = 0;   // FALSE   no keep alive messages
                 optlen = sizeof(optval);
                 /// enable keep alive messages
-                if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) < 0){
+                if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<const char*>(&optval), static_cast<int>(optlen)) < 0){
                     CoutM2(sockconsoleout) << "Failed to set socket option. Port: " << portnum  << endl;
-                    close(sockfd);
+                    CigornCloseSocket(sockfd);
                     return false;
                 }
                 MyCLI.Display(&sockconsoleout);
@@ -722,23 +711,23 @@ bool tcpnet::ConnectSocket(void){
             if (newsockfd >= 0){
                 // Set the close() operation to no-linger.  Causes unsent-data to be lost.
                 linger_onoff = 0;
-                setsockopt(newsockfd, SOL_SOCKET, SO_LINGER, (char *)&linger_onoff, sizeof(linger_onoff));  // chad   not needed
+                setsockopt(newsockfd, SOL_SOCKET, SO_LINGER, reinterpret_cast<const char*>(&linger_onoff), static_cast<int>(sizeof(linger_onoff)));  // chad   not needed
 
-                if (setsockopt(newsockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+                if (setsockopt(newsockfd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&yes), static_cast<int>(sizeof(yes))) == -1) {
                     if (AttemptCount <=1)
                         CoutM2(sockconsoleout) << "Failed to set reuse client socket on my port: " << portnum << endl;
                 };
-
-                // Set the new socket to non-blocking
-                int n = fcntl(newsockfd,F_GETFL,0);
-                if (fcntl(newsockfd, F_SETFL, n | O_NONBLOCK) == -1){
-                    // error. Cannot open non-blocking
+                // Set the accepted client socket to non-blocking.
+                if (CigornSetNonBlocking(newsockfd, true) != 0) {
                     DisconnectSocket();
-                    if (AttemptCount <=1)
-                        CoutM2(sockconsoleout) << "Error.  Cannot set server socket " << description << " to Non-Blocking on my port " << portnum << "  fd:"  << sockfd << endl;
+                    if (AttemptCount <= 1)
+                        CoutM2(sockconsoleout) << "Error. Cannot set server socket "
+                                             << description
+                                             << " to Non-Blocking on my port "
+                                             << portnum
+                                             << " fd:" << sockfd << endl;
                     return false;
                 }
-
                 // Now get my own IP address
                 struct sockaddr_in my;   // will hold my address info for this computer's IP address
                 socklen_t socklen = sizeof(struct sockaddr_storage);
@@ -763,9 +752,9 @@ bool tcpnet::ConnectSocket(void){
 
            }else{
                 // Nobody tried to connect to us.
-                pthread_mutex_lock(&txbufflock);
+                txbufflock.lock();
                 txcount = 0;
-                pthread_mutex_unlock(&txbufflock);
+                txbufflock.unlock();
            }
            break;
         case pClient:
@@ -832,33 +821,45 @@ bool tcpnet::ConnectSocket(void){
 }
 
 
-
 // Force a disconnection of the socket
-bool tcpnet::DisconnectSocket(void){
+bool tcpnet::DisconnectSocket(void)
+{
+    if (newsockfd >= 0)
+    {
+        CigornShutdownSocket(newsockfd);
+        cigorn::SleepMicroseconds(CLOSEDELAY);
 
-    if (newsockfd >= 0){
-        shutdown(newsockfd, SHUT_RDWR);
-        usleep(CLOSEDELAY);
-        if (close(newsockfd) != 0){
-            CoutM2(sockconsoleout) << "Error disconnecting client." << endl;
-        };
+        if (CigornCloseSocket(newsockfd) != 0)
+        {
+            CoutM2(sockconsoleout)
+                << "Error disconnecting client."
+                << endl;
+        }
     }
-    if (sockfd >= 0){
-        usleep(CLOSEDELAY);
-        shutdown(sockfd, SHUT_RDWR);
-        if (close(sockfd) != 0){
-            CoutM2(sockconsoleout) << "Error disconnecting the socket:" << sockfd << endl;
-        };
+
+    if (sockfd >= 0)
+    {
+        cigorn::SleepMicroseconds(CLOSEDELAY);
+        CigornShutdownSocket(sockfd);
+
+        if (CigornCloseSocket(sockfd) != 0)
+        {
+            CoutM2(sockconsoleout)
+                << "Error disconnecting the socket: "
+                << sockfd
+                << endl;
+        }
     }
-    sockfd = -1;
-    newsockfd = -1;
+
+    sockfd = CIGORN_INVALID_SOCKET;
+    newsockfd = CIGORN_INVALID_SOCKET;
     connected = false;
-    ConnectedToIP = "";                           // The IP address and port of the remote machine we talk to
+    ConnectedToIP = "";
     RemotePort = -1;
     client_tries = 0;
     session_bytes_out = 0;
-    return true;
 
+    return true;
 }
 
 // Force a disconnection to the client
@@ -867,8 +868,8 @@ bool tcpnet::DisconnectClient(void){
     switch (protocol){
         case pServer:
             if (newsockfd >= 0){
-                shutdown(newsockfd, SHUT_RDWR);
-                if (close(newsockfd) != 0){
+                CigornShutdownSocket(newsockfd);
+                if (CigornCloseSocket(newsockfd) != 0){
                     CoutM2(sockconsoleout) << "Error disconnecting client." << endl;
                 };
                 CoutM2(sockconsoleout) << "Closing fd:" << newsockfd << endl;
@@ -877,8 +878,8 @@ bool tcpnet::DisconnectClient(void){
             break;
         case pClient:
             if (sockfd >= 0){
-                shutdown(sockfd, SHUT_RDWR);
-                if (close(sockfd) != 0){
+                CigornShutdownSocket(sockfd);
+                if (CigornCloseSocket(sockfd) != 0){
                     CoutM2(sockconsoleout) << "Error closing socket." << endl;
                 };
             }
@@ -908,12 +909,12 @@ bool tcpnet::sendbytes(char* ch, int count){
 
     // cout << count << " bytes to " << myDevIndex << endl;
 
-    pthread_mutex_lock(&txbufflock);  // lock the buffer while we load it
+    txbufflock.lock();  // lock the buffer while we load it
     while ((count > 0) && (txcount < MAXBUFSIZE) && (txcount >= 0)){
        txbuff[txcount] = ch[i];
        i++; count--; txcount++;
     }
-    pthread_mutex_unlock(&txbufflock);
+    txbufflock.unlock();
     msg_out++;  // count this message
     return true;
 
@@ -930,14 +931,14 @@ bool tcpnet::sendbytes(string s){
 
     // cout << l << " bytes to " << endl;
 
-    pthread_mutex_lock(&txbufflock);  // lock the buffer while we load it
+    txbufflock.lock();  // lock the buffer while we load it
     while ((l > 0) && (txcount < MAXBUFSIZE) && (txcount >= 0)){
        txbuff[txcount] = s[i];
        i++; 
        l--;
        txcount++;
     }
-    pthread_mutex_unlock(&txbufflock);
+    txbufflock.unlock();
     msg_out++;  // count this message
     return true;
 
@@ -954,7 +955,7 @@ bool tcpnet::sendtext(string s){
     if (l == 0)
         return false;
 
-    pthread_mutex_lock(&txbufflock);  // lock the buffer while we load it
+    txbufflock.lock();  // lock the buffer while we load it
     while ((l > 0) && (txcount < (MAXBUFSIZE - 2)) && (txcount >= 0)){
        if (NLtoCRLF && (s[i] == NL)) {
            // We are supposed to translate CR into CR LF combo.
@@ -965,7 +966,7 @@ bool tcpnet::sendtext(string s){
        }
        i++; l--;
     }
-    pthread_mutex_unlock(&txbufflock);
+    txbufflock.unlock();
     msg_out++;  // count this message
     return true;
 
@@ -1126,7 +1127,7 @@ void tcpnet::freesocket(void) {
      time_last_activity = time(NULL);
      client_tries = 0;
      session_bytes_out = 0;
-     pthread_mutex_t txbufflock;     // Lock for the tx data buffer
+ 
      echoinput = false;
      NLtoCRLF = false;               // by default, no translation.
      enable_keepalive = false;       // be deafault, don't send keep alives.
@@ -1265,3 +1266,7 @@ void tcpnet::unpauseInput(){
 void tcpnet::unpauseOutput(){
     timeOutputUnpaused = 0;
 }
+
+
+
+ 

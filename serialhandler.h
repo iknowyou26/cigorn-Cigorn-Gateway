@@ -4,11 +4,12 @@
  *
  * Created on July 29, 2010, 7:59 PM
  */
-
+#include "platform/thread/PlatformMutex.h"
 #ifndef _SERIALPORT_H
 #define	_SERIALPORT_H
 
 #include <string>
+#include <cstdint>
 #include <queue>
 
 #include "dataparser.h"
@@ -46,11 +47,11 @@ namespace Communications {
             time_t time_last_msg;      // The time we got the last message in from this port
             std::string devicename;
             std::string fullname;
-            int handle;
+            std::intptr_t handle;
             bool localecho;              // True to echo chars to the local console display
             bool cts_in;
             bool dsr_in;
-            pthread_mutex_t qlock;       // Lock for the TTY message queue
+            cigorn::PlatformMutex qlock;       // Lock for the TTY message queue
             deque<BinaryEntry> MsgQout;  // Messages that are queued up to be sent out this TTY port
             double timeNextPageAllowed;
             double busyChannelStartTime;

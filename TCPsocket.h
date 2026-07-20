@@ -12,7 +12,7 @@
 #include <queue>
 #include <sstream>
 #include "platform/Platform.h"
-
+#include "platform/thread/PlatformMutex.h"
 #define MAXBUFSIZE  10000   // The largest amount of data we can pass to/from the socket in one chunk.
 #define pServer     0       // TCP/IP Server
 #define pClient     1       // TCP/IP Client
@@ -67,8 +67,8 @@ public:
     int  newsockfd;
     int  clienttimeout;     // The maximum time to go without data before we disconnect.
 
-    pthread_mutex_t qlock;       // Lock for the tcp/ip message queue
-    pthread_mutex_t txbufflock;
+    cigorn::PlatformMutex qlock;
+    cigorn::PlatformMutex txbufflock;
     
     queue <BinaryEntry> MsgQout; // Messages that are queued up to be sent out this socket.
 
@@ -119,7 +119,6 @@ public:
 
     void pauseInputUntil(double unpauseTime);
     void pauseOutputUntil(double unpauseTime);
-
     void unpauseInput();
     void unpauseOutput();
 

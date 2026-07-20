@@ -1,6 +1,8 @@
 #ifndef SQLSERVERDATABASE_H
 #define SQLSERVERDATABASE_H
 
+#include "platform/Platform.h"
+
 #include <string>
 #include <sql.h>
 #include <sqlext.h>

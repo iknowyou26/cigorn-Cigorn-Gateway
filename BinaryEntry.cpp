@@ -11,7 +11,9 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <string>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include "Cigorn.h"     // Our application-specific constants and headers
 #include "TCPsocket.h"
 #include "CommThread.h"

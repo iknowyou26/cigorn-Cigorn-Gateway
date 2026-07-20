@@ -1,4 +1,4 @@
-/*********************************extern int TestDeviceRepository();***********************/
+﻿/*********************************extern int TestDeviceRepository();***********************/
 // RaveonNet.cpp
 //
 //
@@ -9,8 +9,30 @@ using namespace std;
 #include <fstream>
 #include <sys/stat.h>
 
+#ifndef _WIN32
 #include <syslog.h>
+#else
+#include <cstdarg>
 
+constexpr int LOG_PID  = 0;
+constexpr int LOG_USER = 0;
+constexpr int LOG_INFO = 0;
+constexpr int LOG_ERR  = 0;
+constexpr int LOG_CRIT = 0;
+
+inline void openlog(const char*, int, int)
+{
+}
+
+inline void syslog(int, const char*, ...)
+{
+}
+#endif
+#include "platform/thread/PlatformMutex.h"
+#include "platform/thread/PlatformLockGuard.h"
+#include "platform/thread/PlatformThread.h"
+#include "platform/time/PlatformTime.h"
+#include <filesystem>
 #include "Cigorn.h"     // Our application-specific constants and headers
 #include "GlobalVar.h"
 #include "TCPsocket.h"
@@ -19,8 +41,6 @@ using namespace std;
 #include "Console.h"
 #include "Router.h"
 #include "health.h"
-#include <pthread.h>
-#include <unistd.h>
 #include "database.h"
 #include "datatable.h"
 #include "datarow.h"
@@ -77,13 +97,13 @@ health SysHealth;  // create the object that reports system health.
 
 // Our object locks.  This is a multi-tasking program and many structures are manipulated on various threads
 // Use pthreads to lock access to shared structures as we manipulate them.
-pthread_mutex_t qlock;       // Lock the queues when we write or pop them.
-pthread_mutex_t devlock;     // Lock for the device array access
-pthread_mutex_t ttylock;     // Lock for the tty device array access
-pthread_mutex_t socklock;    // Lock for the tcp/ip socket opening/manipulating
-pthread_mutex_t addlistlock; // Lock for the tcp/ip socket opening/manipulating
-pthread_mutex_t cmdqlock;    // Lock the command queue when we write or pop them.
-pthread_mutex_t dlyvlock;    // Lock for the delay vector structure that records delay in the router
+cigorn::PlatformMutex qlock;
+cigorn::PlatformMutex devlock;
+cigorn::PlatformMutex ttylock;
+cigorn::PlatformMutex socklock;
+cigorn::PlatformMutex addlistlock;
+cigorn::PlatformMutex cmdqlock;
+cigorn::PlatformMutex dlyvlock;
 int maxQcount = 100;         // Maximum number of entries we allow in a queue
 int maxQage = 60;            // Maximum age of messages in the queue, in seconds
 
@@ -175,15 +195,15 @@ int main(int argc, char *argv[],char *envp[] )
 
    stringstream ss;   // use for debug message outputting
 
-   pthread_t CommThread;
-   pthread_t ConsoleThread;
+   cigorn::PlatformThread CommThread;
+   cigorn::PlatformThread ConsoleThread;
    char *pmessage = "Thread";
-   int iret2;
-   int iret1;
 
    // Added: Signal handler to terminate
+#ifndef _WIN32
    signal(SIGHUP, sig_hup_handler);
    signal(SIGPIPE, sig_pipe_handler);
+#endif
    openlog("cigorn", LOG_PID, LOG_USER);
 
    // Get ourselves ready to write to user.log
@@ -214,9 +234,10 @@ int main(int argc, char *argv[],char *envp[] )
    cout << AppVersion << "\r\n";
    cout << ctime(&cpu_time) << "\r\n";
 
-   pthread_mutex_lock(&addlistlock);       // the addlist structure lock so we can update it in another thread.
-   GetMyIPaddressList(ipaddresses);
-   pthread_mutex_unlock(&addlistlock);     // the addlist structure lock so we can update it in another thread.
+   {
+       cigorn::PlatformLockGuard lock(addlistlock);
+       GetMyIPaddressList(ipaddresses);
+   }
  
    // See if the user does not want to redirect the optuput to a file. Be default we do unless told not to.
    for (i=0; i<argc; i++){
@@ -291,10 +312,21 @@ int main(int argc, char *argv[],char *envp[] )
   // load up the commands in the Comand Line Interpreter
   cli.addAllCommands();
 
-  // Create the log directory
-  #define MY_MASK 0777   // mask to create a directory
+  // Create the log directory if it does not already exist.
   const char dir[] = LOGDIRNAME;
-  mkdir (dir, MY_MASK);             // make the log directory if it is not present
+  const std::filesystem::path logDirectory(dir);
+
+  std::error_code directoryError;
+  std::filesystem::create_directories(logDirectory, directoryError);
+
+  if (directoryError)
+  {
+      ss << "Warning: Unable to create log directory "
+         << logDirectory.string()
+         << ": "
+         << directoryError.message()
+         << endl;
+  }
 
    
 
@@ -347,6 +379,9 @@ int main(int argc, char *argv[],char *envp[] )
            ss << "Error reading .ini file." << endl;            // Read the .ini setting file to get our configuration/settings
            cout << "Error reading .ini file." << "\r\n";            // Read the .ini setting file to get our configuration/settings
        }
+       cout << "LOGIN CONFIG: user=[" << webusername
+            << "] password=[" << webpassword << "]" << endl;
+
        // Initialize the connection to the database
        myDB.connect(dbHost, dbName, dbUser, dbPass);
        Me.DBmodifyflag = (int)time(NULL);                // remmeber we re-read the DB
@@ -407,12 +442,12 @@ int main(int argc, char *argv[],char *envp[] )
            // Create the threads we need to do all the work.
 
            /* Create independent thread for the console input */
-           iret2 = pthread_create( &ConsoleThread, NULL, threadConsole, (void*) pmessage);
+           ConsoleThread = cigorn::PlatformThread([pmessage]() { threadConsole(static_cast<void*>(pmessage)); });
            consolethreadcreated = true;
 
            /* Create thread to run the communications */
-           iret1 = pthread_create(&CommThread, NULL, threadComm, (void*) pmessage);
-           sleep(0.05);
+           CommThread = cigorn::PlatformThread([pmessage]() { threadComm(static_cast<void*>(pmessage)); });
+           cigorn::SleepMilliseconds(50);
       }else{
            // Now the first time through this initialization process.
            if (ipaddresses.size() > 0){
@@ -452,7 +487,7 @@ int main(int argc, char *argv[],char *envp[] )
        else
           emailnotice = 0;   // no email notices
 
-       sleep(0.25);  // wait for the threads to get going
+       cigorn::SleepMilliseconds(250);  // wait for the threads to get going
 
        ss << endl << ".... Initialization Complete ...." << endl;
        cout << endl << "..... Initialization Complete ....." << "\r\n";
@@ -566,7 +601,8 @@ int main(int argc, char *argv[],char *envp[] )
        }// High-speed inner program loop. Run here till we shutdown or restart
 
        syslog(LOG_INFO, "Threads halting");
-       
+       cout << "LOGIN CONFIG: user=[" << webusername
+     << "] password=[" << webpassword << "]" << endl;
        // Disconnect the web server and email sockets
        myWeb.MySocket.DisconnectSocket();
        myEmail.MySocket.DisconnectSocket();
@@ -610,7 +646,7 @@ int main(int argc, char *argv[],char *envp[] )
            cout << "Restarting application." << "\r\n";
            elog.store("Restarting application.");
        }
-       sleep(1);  //
+       cigorn::SleepMilliseconds(1000);  //
 
    }// While restart...  MAIN loop including restart
 
@@ -618,18 +654,18 @@ int main(int argc, char *argv[],char *envp[] )
   ss << "Shut down Cigorn main." << endl;
   MyCLI.Display(&ss);   // send the text to the console output
   cout << "Shutting down Cigorn main." << "\r\n";
-  sleep(1);
+  cigorn::SleepMilliseconds(1000);
   // wait while other tasks get killed.
 
   ShutDownApplication = true;
   AppIsRunning = false;  // we are dead.  no more CLI.  
-  sleep(2);             // wait while other tasks get killed.
+  cigorn::SleepMilliseconds(2000);             // wait while other tasks get killed.
   
   delete dtWD;          // remove the tables from the heap
 //  delete dtRT;
 //  delete dtPR;
 
-  sleep(2);
+  cigorn::SleepMilliseconds(2000);
   cout<< "Goodby." << "\r\n";
   //exit(1);   // done with the program.  Stop now.
 
@@ -643,3 +679,5 @@ int main(int argc, char *argv[],char *envp[] )
 int getMainLoopSpeed(){
     return MainSleeper.getLoopSpeed();
 }
+
+

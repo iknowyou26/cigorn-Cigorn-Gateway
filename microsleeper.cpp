@@ -6,7 +6,10 @@
  */
 
 #include "microsleeper.h"
-#include "unistd.h"
+#include "platform/time/PlatformTime.h"
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 // Create a micro sleeper.  st is the time in uS we'll sleep when not busy.
 // m is the number of times we'll be called and not sleep if we are busy
@@ -61,9 +64,9 @@ void microsleeper::DozeOff(bool bz){
      }
 
      if (busyloops == 0)
-        usleep(sleeptime);  // Sleep because we are not busy
+        cigorn::SleepMicroseconds(static_cast<std::uint64_t>(sleeptime));  // Sleep because we are not busy
      else
-        usleep(10);         // Sleep a tiny bit anyway
+        cigorn::SleepMicroseconds(10);         // Sleep a tiny bit anyway
 
 }
 

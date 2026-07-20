@@ -7,6 +7,18 @@
 
 #include "time.h"
 #include "Ticker.h"
+#include "platform/time/PlatformTime.h"
+
+static void CigornGetTimeOfDay(timeval* value)
+{
+    const std::int64_t milliseconds = cigorn::UnixTimeMilliseconds();
+
+    value->tv_sec =
+        static_cast<decltype(value->tv_sec)>(milliseconds / 1000);
+
+    value->tv_usec =
+        static_cast<decltype(value->tv_usec)>((milliseconds % 1000) * 1000);
+}
 
 int   timeval_subtract (timeval *,timeval *, timeval *);
 void  timeval_add(timeval* , double);
@@ -15,8 +27,8 @@ double TimeValToDbl(timeval);
 
 Ticker::Ticker() {
 
-    gettimeofday(&basetime, NULL);    // read the time that this program started
-    gettimeofday(&epochstart, NULL);  // initialize the epoch to now untill we know better
+    CigornGetTimeOfDay(&basetime);    // read the time that this program started
+    CigornGetTimeOfDay(&epochstart);  // initialize the epoch to now untill we know better
 
 }
 
@@ -30,7 +42,7 @@ Ticker::~Ticker() {
 // reset the epoch time to this many seconds as given by tm
 void Ticker::ResetEpoch(double tm){
 
-    gettimeofday(&epochstart, NULL);     // get the time now.
+    CigornGetTimeOfDay(&epochstart);     // get the time now.
     timeval_add(&epochstart, tm);        // add the tm value to it we were told to set it to. 
 
 }
@@ -42,7 +54,7 @@ double Ticker::Elasped(void){
     timeval nowtime;
     timeval deltat;
 
-    gettimeofday(&nowtime, NULL);
+    CigornGetTimeOfDay(&nowtime);
     timeval_subtract (&deltat, &nowtime, &basetime);
     
     return TimeValToDbl(deltat);
@@ -59,7 +71,7 @@ double Ticker:: EpochTime(double mod){   // return the time into the current epo
     timeval nowtime;
     timeval deltat;
 
-    gettimeofday(&nowtime, NULL);
+    CigornGetTimeOfDay(&nowtime);
     timeval_subtract(&deltat, &nowtime, &epochstart);
 
     t = TimeValToDbl(deltat);  // convert to double
@@ -84,7 +96,7 @@ int Ticker::SlotNum(double mod, double sw){   // return the time into the curren
     timeval nowtime;
     timeval deltat;
 
-    gettimeofday(&nowtime, NULL);
+    CigornGetTimeOfDay(&nowtime);
     timeval_subtract(&deltat, &nowtime, &epochstart);
 
     t = TimeValToDbl(deltat);  // convert to double

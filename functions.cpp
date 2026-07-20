@@ -7,33 +7,42 @@
  */
 
 using namespace std;
-
+#include "platform/PlatformConstants.h"
+#include "platform/time/PlatformTime.h"
 #include <string>
+#include <vector>
 #include <sstream>
+#include <iomanip>
 #include "functions.h"
 #include "ascii.h"
 #include "stdio.h"
-#include <shadow.h>
 #include <iostream>
 #include <stdlib.h>
 #include <sstream>
+#include <iomanip>
 #include <string>
+#include <vector>
+#ifndef _WIN32
+#ifndef _WIN32
 #include <unistd.h>
+#include <cstdlib>
+#endif
+#endif
+static std::string CigornGetLoginName()
+{
+#ifdef _WIN32
+    const char* username = std::getenv("USERNAME");
+#else
+    const char* username = getlogin();
+#endif
 
+    return username != nullptr ? std::string(username) : std::string();
+}
 
-// return the linux user name this program is running under
-string get_username(void){
-     char * mylogin;
-     string s="";
-
-     mylogin = getlogin(); // get the Linux name of this user
-     if(mylogin != 0){ // Check for null pointer return
-         // Copy a c string to a string
-         s = ToString(mylogin, 30);
-     }
-
-     return s;
-
+// Return the operating-system user name.
+string get_username(void)
+{
+    return CigornGetLoginName();
 }
 
 
@@ -613,12 +622,12 @@ string GetSubString(string s, int p)
     int i = 0;
     int fcount = 0;
     char gp = NUL;     // the grouping charator if we run into one:  "([{
-    char cs[s.length()+1];
+    std::vector<char> cs(s.length() + 1);
     string rets = "";
     char sp;
 
     
-    to_cstring (cs, s, s.length());
+    to_cstring(cs.data(), s, s.length());
 
 
     while (i < s.length()){
@@ -793,14 +802,24 @@ string LocalTime(){
 }
 
 // broken sub.
-time_t StringtoTime(string S){
+time_t StringtoTime(string S)
+{
     time_t retval = time(NULL);
-    struct tm tyme;
-    // strptime("2000-01-01-18.46.40.000000", "%Y-%m-%d-%H.%M.%S", &tm);
-    if (strptime(S.c_str(), "%H:%M:%S", &tyme) != NULL){
-        cout << "T:" << tyme.tm_hour << " M:" << tyme.tm_min << " S:" << tyme.tm_sec << endl;
+    struct tm tyme{};
+
+    std::istringstream input(S);
+    input >> std::get_time(&tyme, "%H:%M:%S");
+
+    if (!input.fail())
+    {
+        cout << "T:" << tyme.tm_hour
+             << " M:" << tyme.tm_min
+             << " S:" << tyme.tm_sec
+             << endl;
+
         retval = mktime(&tyme);
     }
+
     return retval;
 }
 
@@ -850,14 +869,9 @@ string LocalDate(string frmt){
 }
 
 // Return the number of seconds with 4 digits of precision.
-double TimeNow(void){
-    struct timeval now;
-    double nowtime;
-
-    gettimeofday(&now, NULL);
-    nowtime = now.tv_usec;             // number of uSeconds
-    nowtime = nowtime / 1000000 + now.tv_sec;
-    return nowtime;
+double TimeNow(void)
+{
+    return static_cast<double>(cigorn::UnixTimeMilliseconds()) / 1000.0;
 }
 
 
@@ -914,14 +928,17 @@ string LocalGMTdiff(void){
 bool TextExists(int argc, char argv[]){
     return true;
 }
-
-
+#ifndef _WIN32
 #include <sys/time.h>
+#endif
 #include <queue>
 // Sleep milliseconds
-void sleepMilli(long ms) {
-  const timespec ts = {ms / 1000, ms % 1000 * 1000000};
-  nanosleep(&ts, NULL);
+void sleepMilli(long ms)
+{
+    if (ms <= 0)
+        return;
+
+    cigorn::SleepMilliseconds(static_cast<std::uint64_t>(ms));
 }
 
 // Parse a two-integer string in the format of  {aaaa bbbb} where aaaa is the first number and
@@ -1206,6 +1223,7 @@ bool WildCardMatch(string s1,string s2){
 
 #include <iostream>
 #include <string>
+#include <vector>
 #include <assert.h>
 
 string b64_encode(const std::string& src){
@@ -1337,4 +1355,5 @@ string b64_decode(std::string const& encoded_string) {
 
   return ret;
 }
+
 

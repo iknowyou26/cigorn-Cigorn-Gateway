@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "/usr/include/postgresql/libpq-fe.h"
+#include <libpq-fe.h>
 #include "datarow.h"
 #include "database.h"
 
@@ -73,4 +73,5 @@ using namespace std;
     };
 
 #endif	/* _DATATABLE_H */
+
 

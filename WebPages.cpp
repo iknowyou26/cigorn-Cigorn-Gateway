@@ -1,4 +1,4 @@
-/* 
+﻿/* 
  * File:   WebPages.cpp
  * Author: john
  * 
@@ -276,6 +276,7 @@ string WebPages::HomePage(bool ShowTheIP) {
 
 // Build the Login page
 string WebPages::LoginPage() {
+    cout << "LOGIN DEBUG: LoginPage called" << endl;
 
     string s;
     std::stringstream ss;
@@ -1480,4 +1481,5 @@ string WebPages::Head(int RefreshRate){
     ss << fm.TagClose(tag_head) << endl;
     return ss.str();
 }
+
 

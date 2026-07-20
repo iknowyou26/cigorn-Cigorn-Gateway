@@ -12,14 +12,25 @@
 #include <string.h>   // Required by strcpy()
 #include <stdlib.h>   // Required by malloc()
 #include <stdio.h>
-#include <pthread.h>
+#include "platform/Platform.h"
+#ifndef _WIN32
 #include <sys/socket.h>
+#endif
+#ifndef _WIN32
 #include <unistd.h>
 #include <syslog.h>
-
+#endif
+#include <iomanip>
+#include <sstream>
+#include <thread>
+#include <chrono>
+#include "platform/threading/PlatformThread.h"
+#include "platform/thread/PlatformLockGuard.h"
 #include <ios>
 #include <limits>
+#ifndef _WIN32
 #include <sys/ioctl.h>
+#endif
 #include "database/DatabaseFactory.h"
 //#include "PostgresDatabase.h"
 #include "RepositoryManager.h"
@@ -129,17 +140,23 @@ void *threadComm( void *ptr )
  
     time_t now_time = time(NULL);
     time_t last_time = time(NULL);
-    struct tm tm;
-    strptime("2000-01-01-18.46.40.000000", "%Y-%m-%d-%H.%M.%S", &tm);
-    time_t last_sii = mktime(&tm);
-    time_t last_wdi = mktime(&tm);
-    time_t last_gwsync = mktime(&tm);
-    stringstream ss;
+    std::tm initialTime = {};
 
-    int iret1;
-    pthread_t SocketThread;
-    bool SocketThreadCreated = false;
+std::istringstream initialTimeStream(
+    "2000-01-01-18.46.40"
+);
 
+initialTimeStream >> std::get_time(
+    &initialTime,
+    "%Y-%m-%d-%H.%M.%S"
+);
+
+time_t last_sii = mktime(&initialTime);
+time_t last_wdi = mktime(&initialTime);
+time_t last_gwsync = mktime(&initialTime);
+std::stringstream ss;
+    cigorn::PlatformThread SocketThread;
+bool SocketThreadCreated = false;
     StatusDisplay frontdisplay;        // create an object to talk to the status display on the StatPort rs232 port
 
     while (!ShutDownApplication){
@@ -194,22 +211,33 @@ if (ttyDb->Connect(myDB.LastConnInfo))
         // Fill in the sockets structure so the socket knows its port to use, and where to store statistics.
         RunSocketThread = true;
         threadinfo.valid = true;  // this structure is unused now. Maybe some day we'll need to pass info the the thread using it.
-        if (SocketThreadCreated == false){
-            iret1 = pthread_create(&SocketThread, NULL, threadTCPserver, (void*) &threadinfo);
-            SocketThreadCreated = true;
+        if (!SocketThreadCreated) {
+    SocketThread = cigorn::PlatformThread(
+        []() {
+            threadTCPserver(
+                static_cast<void*>(&threadinfo)
+            );
         }
+    );
+
+    SocketThreadCreated = true;
+}
 
         CommThreadInitialized = true;    // done initializing the COmmThread.  Run the loop
         frontdisplay.Refresh(true);
 
-        sleep(0.05);
+        std::this_thread::sleep_for(
+    std::chrono::milliseconds(50)
+);
 
         // Output the debug text if there is any
         MyCLI.OutputText(ss.str());   // send the text to the console output
         ss.str("");                   // clear the buffer
 
         while (maininitialized == false){
-           sleep(0.05);  // wait for the main loop to get running and finish its initialization
+           std::this_thread::sleep_for(
+    std::chrono::milliseconds(50)
+);  // wait for the main loop to get running and finish its initialization
         }
 
         // The main has initialized itself, got all threads running, and read teh .ini file in
@@ -378,8 +406,9 @@ if (ttyDb->Connect(myDB.LastConnInfo))
         // wait for a while if someone wants us to stop communications.
         if ((SocketThreadRunning) && (i<10) ){
             // wait here while socket thread stops.
-            sleep(1);  // wait here for a bit
-            i++;
+            std::this_thread::sleep_for(
+    std::chrono::seconds(1)
+);            i++;
         }
         cout << "Socket thread halted in " << i << " Seconds." << endl;
 
@@ -388,8 +417,9 @@ if (ttyDb->Connect(myDB.LastConnInfo))
         // wait for a while if someone wants us to stop communications.
         if ((StopCommunications) && (i<10) ){
             // Someone told us to stop for a while and then we'll restart
-            sleep(1);  // wait here for a bit
-            i++;
+            std::this_thread::sleep_for(
+    std::chrono::seconds(1)
+);            i++;
             CommunicationsRunning = false;
         }
 
@@ -409,7 +439,9 @@ if (ttyDb->Connect(myDB.LastConnInfo))
     };
 
     cout << "Waiting for socket thread to stop.." << endl;
-    pthread_join( SocketThread, NULL);   // wait for the socket thread to stop running
+    if (SocketThread.Joinable()) {
+    SocketThread.Join();
+}
     MyCLI.Display(&ss);
     cout << "Socket thread stopped.." << endl;
    //  exit(1);   // done with the thread.  Stop now.
@@ -506,12 +538,15 @@ bool ConnectTTYdevice(int devindex, string intf, int baudrate, string settings){
         
         if ((ttyindex >= 0) && (ttyindex < MAX_TTY)){
             //cout << "DEV.." << intf << endl;
-            pthread_mutex_lock(&devlock);
-            OurDevices.setBinding(devindex, ttyindex);
-            // initialize the serial port
-            pthread_mutex_unlock(&devlock);
+           {
+    cigorn::PlatformLockGuard lock(devlock);
+    OurDevices.setBinding(devindex, ttyindex);
+}
+           {
+    cigorn::PlatformLockGuard lock(ttylock);
 
-            pthread_mutex_lock(&ttylock);
+    // keep all existing COMport configuration code here
+}
             if (settings.size() >= 3){
                 COMport[ttyindex].parity = toupper(settings[0]);
                 COMport[ttyindex].databits = settings[1] - '0';
@@ -542,7 +577,7 @@ bool ConnectTTYdevice(int devindex, string intf, int baudrate, string settings){
             COMport[ttyindex].MyParser.ParsingPort = ttyindex;  // set it equal to the tty port number
             COMport[ttyindex].MyParser.DefaultDstID = DEFAULT_ID;
             COMport[ttyindex].MyParser.DefaultSrcID = DEFAULT_ID;
-            pthread_mutex_unlock(&ttylock);
+            
            return true;
         }
     }
@@ -574,13 +609,17 @@ int AddConnection(std::string dts, std::string intf, std::string devdes){
 
     if (OurDevices.devicetypes[i] == dNONE){
         // We found an unused device object.  Turn it into a device
-        pthread_mutex_lock(&devlock);
+        {
+    cigorn::PlatformLockGuard lock(ttylock);
+
+    // keep all existing COMport configuration code here
+}
         OurDevices.designator[i] = devdes; // The DeviceDesignator text for this interface
         OurDevices.devicetypes[i] = dt;    // The type of hardware connected. (index value)
         OurDevices.interfaces[i] = intf;   // the interface we are going to use.
         OurDevices.descriptions[i] = "";   // a text description for this device
         OurDevices.channels[i] = -1;       // we don't use a channel for  this type of device
-        pthread_mutex_unlock(&devlock);
+        
         return i;                          // we successfully added it.
     }
 
@@ -701,7 +740,11 @@ void processMSGinput(void){
         deltaT = -1;
 
     // Save some statistics on the speed this message was processed in.
-    pthread_mutex_lock(&dlyvlock);    // lock the delay vector while we manipulate it
+    {
+    cigorn::PlatformLockGuard lock(dlyvlock);
+
+    // keep the existing queue-size cleanup code here
+}
     switch (Min.format){
         case fmtPRAVE:
             if (deltaT > 0) dlyPRAVE.insert(dlyPRAVE.begin(),deltaT);  // keep track of the message delay through the gateway
@@ -720,23 +763,28 @@ void processMSGinput(void){
         case fmtESRI_CSV1:
             break;
      }
-    pthread_mutex_unlock(&dlyvlock);    // unlock the vector after we are done with it.
+   
 
     // Limit the size of the array we keep the statistics for throughput
-    pthread_mutex_lock(&dlyvlock);    // lock the vector while we manipulate it
+   {
+    cigorn::PlatformLockGuard lock(dlyvlock);
+
+    // keep the existing queue-size cleanup code here
+}
     if (dlyPRAVE.size() > MAXDLYQSIZE)
         dlyPRAVE.erase(dlyPRAVE.end()-1);
     if (dlyWMX.size() > MAXDLYQSIZE)
         dlyWMX.erase(dlyWMX.end()-1);
     if (dlyCIGORN.size() > MAXDLYQSIZE)
         dlyCIGORN.erase(dlyCIGORN.end()-1);
-    pthread_mutex_unlock(&dlyvlock);    // lock the vector while we manipulate it
+   
 
 
     // Remove the object from the queue.  Threadlock it while this is done.
-    pthread_mutex_lock(&qlock);
-    qMSGin.pop();                        // take one NMEA sentence off the top
-    pthread_mutex_unlock(&qlock);
+    {
+    cigorn::PlatformLockGuard lock(qlock);
+    qMSGin.pop();
+}
 
     // Output the debug text if there is any
     MyCLI.OutputText( ss.str() );   // send the text to the console output
@@ -800,7 +848,11 @@ int DeviceBoundToTTY(string ttyname){
 int InitializeComPorts(void){
     int i = 0;
     for (i=0; i<MAX_TTY; i++){
-        pthread_mutex_lock(&ttylock);
+        {
+    cigorn::PlatformLockGuard lock(ttylock);
+
+    // keep all existing initialization code here
+}
 
         // Try to open all the serial ports to see if they exist on the machine
         COMport[i].index = i;
@@ -808,7 +860,7 @@ int InitializeComPorts(void){
         COMport[i].devicename = "ttyS" + intToString(i);
         COMport[i].myDevIndex = -1;
         COMport[i].myDevType = dNONE;
-        pthread_mutex_unlock(&ttylock);
+        
     }
     return 0;
 }
@@ -875,52 +927,63 @@ void HandleRS232Comms(void){
         }
     }
 
-     // See if there is data from the outbound TTY data queue to send out to the serial ports on this site
-     int routed = 0; 
-     while (qTTYout.size() > 0 && routed < 200){
-         // Arbitrary limit on how many we move per call
-         routed++;
-         
-         pthread_mutex_lock(&qlock);
-         BinaryEntry TopEntry;
-         TopEntry = qTTYout.front();           // get the q object with the data we need to send out
-         qTTYout.pop();                        // take one object off the top
-         pthread_mutex_unlock(&qlock);
-         success = false;   // set true once we find a suitable socket to send this data to.
-         for (i = 0; i < MAX_TTY; i++){
-              // See if there is data to send out the serial port
-              pthread_mutex_lock(&COMport[i].qlock);
-              if ((TopEntry.DstDevDesIndex == COMport[i].myDevIndex)
-                   && (TopEntry.bcount < MAXBUFSIZE) && (COMport[i].myDevIndex >= 0)){
-                   // This is the socket we need to send out the data to...
-                   if(COMport[i].MsgQout.size() >= maxQcount){
-                       cout << "Queue overflow at " << COMport[i].devicename;
-                       pthread_mutex_unlock(&COMport[i].qlock);
-                       break;
-                   }
-                  
-                   if (Me.IsActive == false){
-                        // We are off-line. Dont send data
-                   }else{
-                        // Send the data out if we are online(active)
-                        COMport[i].MsgQout.push_back(TopEntry);    // put the message in the outbound message q for this TTY port
-                        success = true;
-                   }
+     // See if there is data from the outbound TTY data queue to send out
+int routed = 0;
 
-              }
-              pthread_mutex_unlock(&COMport[i].qlock);         // pthread_mutex_unlock(&addlistlock)
-              if (success)
-                  break;
-           }
- 
-         if (success == false)
-             FailedTTYOut++;    // count the homeless messages
-     }
+while (qTTYout.size() > 0 && routed < 200) {
+    routed++;
 
+    BinaryEntry TopEntry;
+
+    {
+        cigorn::PlatformLockGuard lock(qlock);
+
+        if (qTTYout.empty()) {
+            break;
+        }
+
+        TopEntry = qTTYout.front();
+        qTTYout.pop();
+    }
+
+    success = false;
+
+    for (i = 0; i < MAX_TTY; i++) {
+        bool queueOverflow = false;
+
+        {
+            cigorn::PlatformLockGuard lock(COMport[i].qlock);
+
+            if ((TopEntry.DstDevDesIndex == COMport[i].myDevIndex) &&
+                (TopEntry.bcount < MAXBUFSIZE) &&
+                (COMport[i].myDevIndex >= 0)) {
+
+                if (COMport[i].MsgQout.size() >= maxQcount) {
+                    cout << "Queue overflow at "
+                         << COMport[i].devicename;
+
+                    queueOverflow = true;
+                } else if (Me.IsActive) {
+                    COMport[i].MsgQout.push_back(TopEntry);
+                    success = true;
+                }
+            }
+        }
+
+        if (queueOverflow || success) {
+            break;
+        }
+    }
+
+    if (!success) {
+        FailedTTYOut++;
+    }
+}
     
      // Check the serial ports, and if there is room in their data buffers and a message to send, send it
      for (i = 0; i < MAX_TTY; i++){
-         pthread_mutex_lock(&COMport[i].qlock);
+         {
+    cigorn::PlatformLockGuard lock(COMport[i].qlock);
             if (COMport[i].MsgQout.size() > 0){
                 if(COMport[i].bcl){
                    // We've got a message we'd like to send. Before we do so,
@@ -952,21 +1015,20 @@ void HandleRS232Comms(void){
                            break;
                    }
                    if(lockout){
-                       pthread_mutex_unlock(&COMport[i].qlock);   // pthread_mutex_unlock(&addlistlock)
+                    
                        continue;
                    }
               }
               
               if(COMport[i].flowcontrol == 'H' && !COMport[i].CTSin()){
                   // Flow control is preventing sending
-                  pthread_mutex_unlock(&COMport[i].qlock);   // pthread_mutex_unlock(&addlistlock)
+                  
                   continue;
               }
                 
               if(COMport[i].isOutputPaused()){
                   // Pause condition is preventing sending
-                  pthread_mutex_unlock(&COMport[i].qlock);   // pthread_mutex_unlock(&addlistlock)
-                  continue;
+                                   continue;
               }
               
               if(COMport[i].queuedBytes() > 0){
@@ -975,8 +1037,7 @@ void HandleRS232Comms(void){
                   // Without this, it's possible for the OS to queue hundreds
                   // of messages without our knowledge and we lose the ability
                   // to do more than basic flow control
-                  pthread_mutex_unlock(&COMport[i].qlock);   // pthread_mutex_unlock(&addlistlock)
-                  continue;
+                                   continue;
               }
               
              // There is a message to send
@@ -1002,7 +1063,11 @@ void HandleRS232Comms(void){
                     string message;
                     TopEntry.data[TopEntry.bcount] = '\0'; // Null terminate for string assignment
                     message.assign(TopEntry.data);
-                    syslog(LOG_INFO, "page initmsg %d %s", firstPager.capCode, TopEntry.data);
+                   #ifndef _WIN32
+syslog(LOG_INFO, "page initmsg %d %s",
+       firstPager.capCode,
+       TopEntry.data);
+#endif
                     // Hijack the be buffer for big savings!
                     int byteCount = POCSAGEncoder::encode(firstPager, message, TopEntry.data, BinaryEntry::MAXDATA);
 
@@ -1017,7 +1082,11 @@ void HandleRS232Comms(void){
                             message.assign(nextEntry.data);
                             bool messageAdded = POCSAGEncoder::append(pager, message, TopEntry.data, &byteCount, 480);//208
                             if(messageAdded){
-                                syslog(LOG_INFO, "page stitchmsg %d %s", pager.capCode, nextEntry.data);
+#ifndef _WIN32
+syslog(LOG_INFO, "page stitchmsg %d %s",
+       pager.capCode,
+       nextEntry.data);
+#endif
                                 // This page was successfully stitched on. Remove it
                                 TTYOut_PopFront(i);
                             }else{
@@ -1091,23 +1160,24 @@ void HandleRS232Comms(void){
                 if (Me.IsActive == true){
                     COMport[i].SendBytes(TopEntry.data, TopEntry.bcount);  // store the topentry in the data buffer
                     if(TopEntry.format == fmtWMXPOCSAG){
-                        syslog(LOG_INFO, "page transmit");
+                        #ifndef _WIN32
+syslog(LOG_INFO, "page transmit");
+#endif
                     }
                 }
                 // Remove the message from the queue
                 TTYOut_PopFront(i);
-             }else{
-               cout << "Invalid data byte count";
-               TTYOut_PopFront(i);
-             }
-          }
-          pthread_mutex_unlock(&COMport[i].qlock);   // pthread_mutex_unlock(&addlistlock)
-       }
-    
-};
+                      } else {
+                 cout << "Invalid data byte count";
+                 TTYOut_PopFront(i);
+             }   // closes TopEntry format if/else chain
 
-int GetSerialIndex(string interfacename){
-    int i;
+         }       // closes if (COMport[i].MsgQout.size() > 0)
+     }           // closes PlatformLockGuard scope
+ }               // closes for loop
+}                // closes HandleRS232Comms
+int GetSerialIndex(string interfacename){    
+int i;
 
     for (i=0; i < MAX_TTY; i++ ){
         if (COMport[i].devicename == interfacename)
@@ -1277,14 +1347,18 @@ void PurgeOldMessages(void){
         //limit the number of entries in the Q;
         while ((tcpsockets[idx].MsgQout.size() >= (maxQcount - 1)) && (wdc < MAX_WDC_PURGE) && (tcpsockets[idx].MsgQout.size() > 0)){
             // Time to get rid of an old message
-            pthread_mutex_lock(&tcpsockets[idx].qlock);   // lock the q
+           {
+    cigorn::PlatformLockGuard lock(tcpsockets[idx].qlock);
+
+    // keep the existing code here
+}
             CoutM1(ss) << "Q overflow in " << tcpsockets[idx].description << endl;
             try {
                 tcpsockets[idx].MsgQout.pop(); // remove the message. It is too old
              }
                 catch (exception& e) {
              }
-            pthread_mutex_unlock(&tcpsockets[idx].qlock);   // lock the q
+            
             wdc++;
         }
 
@@ -1293,7 +1367,11 @@ void PurgeOldMessages(void){
         // Make sure the entries are not getting too old
         if (tcpsockets[idx].MsgQout.size() > 0){
             // Now lock it and check again.  Faster than always locking it. 
-            pthread_mutex_lock(&tcpsockets[idx].qlock);   // lock the q
+            {
+    cigorn::PlatformLockGuard lock(tcpsockets[idx].qlock);
+
+    // keep the existing code here
+}
     
             if (tcpsockets[idx].MsgQout.size() > 0){
                 be = tcpsockets[idx].MsgQout.front();         // get the oldest entry
@@ -1311,7 +1389,7 @@ void PurgeOldMessages(void){
                      }
                 }
             }
-            pthread_mutex_unlock(&tcpsockets[idx].qlock);   // unlock the q
+           
         }
         idx++;  // next socket next time
      }
@@ -1323,14 +1401,20 @@ void PurgeOldMessages(void){
       //limit the number of entries in the Q
       int oldSize = COMport[j].MsgQout.size();
       while ((COMport[j].MsgQout.size() > maxQcount) && (wdc < MAX_WDC_PURGE)){
-         pthread_mutex_lock(&COMport[j].qlock);
+         {
+    cigorn::PlatformLockGuard lock(COMport[j].qlock);
+    oldSize = static_cast<int>(COMport[j].MsgQout.size());
+}
          TTYOut_PopFront(j);
-         pthread_mutex_unlock(&COMport[j].qlock);     // pthread_mutex_unlock(&addlistlock)
+         
          wdc++;
       }
 
       // Look at the first entry and see how old it is.
-      pthread_mutex_lock(&COMport[j].qlock);
+      {
+    cigorn::PlatformLockGuard lock(COMport[j].qlock);
+    oldSize = static_cast<int>(COMport[j].MsgQout.size());
+}
       if (COMport[j].MsgQout.size() > 0){
          // Make sure the entries are not getting too old
          BinaryEntry be;
@@ -1345,7 +1429,7 @@ void PurgeOldMessages(void){
         }
       }
       int newSize = COMport[j].MsgQout.size();
-      pthread_mutex_unlock(&COMport[j].qlock);         // pthread_mutex_unlock(&addlistlock)
+     
       if(newSize != oldSize){
          CoutM1(ss)<<"Purged messages from " << COMport[j].devicename 
                  << ". Queue reduced from " << oldSize
@@ -1357,18 +1441,19 @@ void PurgeOldMessages(void){
    
 }
 
-void startsocketthread(void) {
-   int iret1;
+void startsocketthread(void)
+{
+    threadinfo.valid = true;
 
-   // remember the port numebr this socket is using.
+    cigorn::PlatformThread socketThread(
+        []() {
+            threadTCPserver(
+                static_cast<void*>(&threadinfo)
+            );
+        }
+    );
 
-   // Create a thread for this instance of the classs to do socket communications.
-   pthread_t SocketThread;
-
-   // Fill in the sockets structure so the socket knows its port to use, and where to store statistics.
-   threadinfo.valid = true;  // this structure is unused now. Maybe some day we'll need to pass info the the thread using it.
-   iret1 = pthread_create(&SocketThread, NULL, threadTCPserver, (void*) &threadinfo);
-
+    socketThread.Detach();
 }
 
 // Return the number of sockets we are using

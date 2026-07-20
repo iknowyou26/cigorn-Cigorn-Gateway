@@ -5,19 +5,24 @@
  * Created on August 2, 2010, 4:56 PM
  * Handles in input/output to the command-line user interface
  */
+#include "platform/thread/PlatformLockGuard.h"
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <stdlib.h>   // Required by malloc()
 #include <stdio.h>
-#include <pthread.h>
+#include "platform/Platform.h"
 #include <map>
 #include <queue>
 #include <vector>
 #include <exception>
+#ifndef _WIN32
 #include <sys/resource.h>
+#endif
+#ifndef _WIN32
 #include <unistd.h>
 #include <sys/types.h>
+#endif
 
 #include "Cigorn.h"     // Our application-specific constants
 #include "GlobalVar.h"
@@ -75,9 +80,10 @@ int CommandLine::CommandQcount(void){
 
 void CommandLine::IntoCommandQ(string s){
 
-    pthread_mutex_lock(&cmdqlock);
+{
+    cigorn::PlatformLockGuard lock(cmdqlock);
     qCLIin.push(s);
-    pthread_mutex_unlock(&cmdqlock);
+}
 
 };
 // ******************************************************************************
@@ -774,8 +780,11 @@ bool  CommandLine::cmdErrLog(void){
 bool CommandLine::cmdConfig(void){
     stringstream ssout;
     // Global Statistics
-    rlimit mylimit;
-    int i;
+    #ifndef _WIN32
+struct rlimit mylimit;
+#endif
+
+int i;
 
     ssout << set_bold(true) << cHEADING << "System  Configuration  " << cNONE << set_bold(false) <<endl;
     ssout << cHEADLINE << "Gateway name          :  " << cITEM << Me.MyName << cNONE;
@@ -825,10 +834,22 @@ bool CommandLine::cmdConfig(void){
     ssout << cHEADLINE << "Email notice level    :  " << cITEM << intToString(emailnotice) << endl;
     ssout << cHEADLINE << "Email notice interval :  " << cITEM <<  doubleToString(statusemailinterval, 2) << endl;
     ssout << cHEADLINE << "Web Server port       :  " << cITEM <<  myWeb.portnum << endl;
-    if (getrlimit(RLIMIT_NOFILE, &mylimit)==0){
-        i = mylimit.rlim_max;
-        ssout << cHEADLINE << "Max # of files/ports  :  " << cITEM << i << endl;
-    }
+    #ifndef _WIN32
+if (getrlimit(RLIMIT_NOFILE, &mylimit) == 0) {
+    i = static_cast<int>(mylimit.rlim_max);
+    ssout << cHEADLINE
+          << "Max # of files/ports  :  "
+          << cITEM
+          << i
+          << endl;
+}
+#else
+ssout << cHEADLINE
+      << "Max # of files/ports  :  "
+      << cITEM
+      << "Windows-managed"
+      << endl;
+#endif
     ssout << cHEADLINE << "My directory          :  " << cITEM <<  GetMyDirectory() << endl;
     ssout << cHEADLINE << "Status message level  :  " << cITEM <<  messagelevel << endl;
 
@@ -945,10 +966,13 @@ bool CommandLine::cmdEcho(void){
         for (i=0; i<MAXSOCKETS; i++){
           tcpsockets[i].localecho = false;        // no ech on any socket
         }
-        for (i=0; i<MAX_TTY; i++){
-            pthread_mutex_lock(&ttylock);
-            COMport[i].localecho = false;
-            pthread_mutex_unlock(&ttylock);
+        {
+    cigorn::PlatformLockGuard lock(ttylock);
+
+    for (i = 0; i < MAX_TTY; i++) {
+        COMport[i].localecho = false;
+    }
+
         }
         return true;
     }
@@ -1500,12 +1524,14 @@ string CommandLine::GetNextCommand(void){
     string s = "";
     stringstream ssout;
 
-    if (qCLIin.size() > 0){
-      pthread_mutex_lock(&cmdqlock);        // take over the q
-      s = qCLIin.front();
-      qCLIin.pop();
-      pthread_mutex_unlock(&cmdqlock);      // release it
+    {
+    cigorn::PlatformLockGuard lock(cmdqlock);
+
+    if (!qCLIin.empty()) {
+        s = qCLIin.front();
+        qCLIin.pop();
     }
+}
 
     return s;
 
@@ -1618,6 +1644,7 @@ bool CommandLine::cmdSet(void){
         }
         else{
            ssout << SiteManager.EpochTime << endl;
+	   
            ResultStr = ssout.str();
            return true;
         }
@@ -1687,7 +1714,19 @@ bool CommandLine::cmdSet(void){
             return true;
         }
     }
+    // Generic SET handler
+    if (SX[2].size() > 0)
+    {
+        ConfigParameter(
+            SX[2],
+            sx[3],
+            sx[4],
+            sx[5],
+            sx[6],
+            sx[7]);
 
+        return true;
+    }
 
     ResultStr = ssout.str();
     return true;

@@ -1,0 +1,1282 @@
+
+
+*/A s milp eesvrrei  nht enietnrted moia nsuni gCTP 
+  hT eoptrn mueb rsip saes dsaa  nraugemtn* /#
+nilcdu es<dtoih.>#
+nilcdu es<dtil.b>h
+i#cnuled" lptaofmrP/alftro.m"h
+i#cnuled" lptaofmrs/coek/tlPtaofmroSkcteh."#
+nilcdu ep"alftro/mitemP/alftroTmmi.e"h
+i#cnuled" lptaofmrt/rhae/dlPtaofmruMet.x"h
+i#cnuled< tsirgn>#
+fidnfe_ IW3N2#
+nilcdu es<syt/pyseh.>#
+nilcdu es<syi/colth.>#
+nilcdu el<nixui/.f>h
+i#cnuled< cftn.l>h
+e#dnfi
+
+i#cnuled" adatapsrreh."#
+nilcdu ep"oricfn.o"h
+i#cnuled" oSkctehTerdah."#
+nilcdu en"teowkrh."#
+fidnfe_ IW3N2#
+nued f__SU_EIMCS
+i#cnuled< en/tfih.>#
+neidf
+#
+nilcdu ee"rronh. "/  /daed dybC ah d-411
+
+i#cnuled" iCognrh. "    //O rua ppilacitnos-epicif cocsnattn sna dehdares#
+nilcdu ed"taparaes.r"h
+i#cnuled" CTsPcoek.t"h
+i#cnuled" oCmmhTerdah."#
+nilcdu em"ciorlseeep.r"h
+
+suni ganempsca ets;d
+
+
+i#nfed fW_NI23
+ni teg_tfica_eiltss(rtcu tfiocfn* ;)
+e#dnfi
+
+ni ttechuotn= 0 ;
+/
+ /ctip olcsa socsnrtcuotrt
+pcen:tt:pcen(t ){ 
+  c elra)(;}
+
+
+ctnpte::ctnptec(notst pcen&to ir)g{ 
+}
+t
+pcen:t~:ctnpte)({ 
+
+
+}
+v
+io dctnpte::lcae(rovdi ){ 
+  s cofk d =ICOGNRI_VNLADIS_COEK;T
+    ocnnceet d =afsl;e
+    ymeDDvsenIed x =1- ;      /  /niidacet son tobnu dota ynd veci eedisngtaroy te. 
+  m DyveyTep= - ;1
+    enswcofk d =1-; 
+  p rontmu= - ;1
+    oskcdf= - ;1
+    xtocnu t =;0
+    ybet_sni= 0 ; 
+  b tyseo_tu= 0 ; 
+  i dnxe= - ;1
+    nietfrca e =""; 
+  i in_trtei s =;0
+    ohtsdardse s =""; 
+  h soptro t =;0
+    ocnncest= 0 ; 
+  m Iy4P= " ;"
+    oCnnceetTdIo P =""; 
+  d sercpiitno= " ;"
+    ohtsPIdardse s =""; 
+  r RxwaoCnu t =;0
+    xraR[w]0= N LU; 
+  t mi_ealtsi_ n =itemN(LU)L; 
+  t mi_ealtso_tu= t mi(eUNLL;)
+    iteml_sa_tcaitivyt= t mi(eUNLL;)
+    lceitnt_irse= 0 ; 
+  s seisnob_tyseo_tu= 0 ;
+ 
+  e hciopntu= f laes; 
+  N tLCoLR F =afsl;e              /  /ybd feuatl ,ont arsnalitno. 
+  e anlb_eekpelavi e =afsl;e      /  /ebd aeaflu,td not's ne dekpea ilev.s
+    oFcrCeilneDtsiocnnce t =afsl;e
+}
+/
+ /* *************************************************************************************/
+ /eSvrci eht eOSKCTE
+//C LA Levyro tfne .S coeksta ern nob-olkcni,gs  ohtsir uoitenm su tebc notsnalt yacllde./
+ /eRutnr-  1fiw  eodn toihgn ,roa p sotivi eunbmrei  fews ne tror ceieev dadat./
+ /* *************************************************************************************i
+tnt pcen:tt:pcs_coek(t ){
+ 
+    tsurtca rdc_nl;t/  /FAI_ENT 
+    oskcel_n tls;t
+    i tnn 0=; 
+    ni tdrlfga s =SM_GODTNAWTI ;/  /nEusera llr aesda ern nolbcoikgn
+    s rtcu toskcdardi_ nda;r      //A _FNITE
+    i tnr teav l =1- ;  //-  1on tocnnceet,d0 n= oadat , > 0unbmreo  fybet sxtdeo  rxrde
+    d uolb emtuo t =;0
+
+    i  fF(roeclCeitniDcsnoentc{)
+        /  /osemhtni gawtn ssut  oidcsnoentct ih soskctef or mlceitn
+        D siocnnceStcoek(t;)
+        F roeclCeitniDcsnoentc= f laes ;  //d no eodni ghtsi. 
+        erutnr0 ; 
+    }
+ 
+  /  /eS efit ehs coek tsii initlazideO  Kna dog t aiFelD sercpiotr 
+  i  fs(cofk d < 0{)
+        //S coek tsin toi initlazide ,osf ritsg  onitiaiilezi t 
+      i initlazi_eoskcte)(; 
+      i  fs(cofk d <)0{ 
+          //octu<  <F"iael doto ep noptr" <  <optrun m<<" D :D "<<d sercpiitno<  <neld; 
+      } 
+        erutnr- ;1  / / 
+  } 
+
+    //S fate yhcce kotv refi yhttat ehs coek tsis itlln nolbcoikgn .hSuodl
+    //n vereh paepn 
+  i tns coekFtalsg= f nclts(cofk,dF G_TELF;)
+    fi( oskctelFga s < 0||! s(coekFtalsg& O N_NOLBCO)K{)
+        //N nob-olkcni gsin tos te .aBli
+        iDcsnoentcoSkcte)(; 
+      r teru n1-; 
+  } 
+
+    wstihc( rptocolo{)
+        acesp eSvrre: 
+          /  /eS efit ih soskctei  socmmnucitani giwhta onhtreh sot 
+          i  fn(weoskcdf=  =1-{)
+                //w  era eawtini gotc noentct ehs coek tots mo etoeh rohtsw ohi  s aCT Plceitn
+                oCnnceStcoek(t;)
+
+                erutnr- ;1
+            } 
+          /  /eWh va e aoskctec ertadea dna err aeydt  oxehcnaegd ta.a
+            //S eei  fht eerometh so tocnncestt  otia dns nesdd ta,ao  rfiw  eendet  oesdnd ta aott ehr meto eohts
+            emsmter(bxfu,fN LU ,AMBXFUISEZ;)  /  /lCae ruo tht eXRd ta ab fuefr 
+          n = r ce(venswcofk,dr bxfu,fM XAUBSFZI,Er fdalsg)  ;  //n nob-olkcni gerdao  fniocmmni gadat
+            rbae;k
+        acesp GDARTM:X
+            //W  eonmrlaylo ln ynitiaiilezs coek tfit eheri  sadatt  oesdn
+            fi( sMQguo.tisez)(> 0 {)
+                //W  eodh va eadatt  oesdn ,ost yrt  oacllt ehs reevr 
+              /  /octu<  <C"noentcm  eot "<<h soatdderss<  <neld; 
+              C noentcoSkcte)( ;  //s teput ehs coekt 
+              i  fc(ilne_trtei s >AMCXNORTEI)S{ 
+                  C uoMt(1oskcocsnlooetu )<<" rTiygnt  onitiaiilez#  "<<m DyveeDIsdnxe<  <(" "<<d sercpiitno<  <)"t  olceitn .eRi-initlazini gymp ro:t "<<p rontmu<  <neld; 
+                  i initlazi_eoskcte)(; 
+              } 
+                yMLC.IiDpsal(ys&cocknooseluo)t; 
+              n = - ;1    /  /onr ceieevd ta anoa s neidgnp ro.tS ten t  o1-t  oafllt rhuohgR  Xolig.c
+            e}sl{e
+                yMLC.IiDpsal(ys&cocknooseluo)t; 
+              r teru n1- ;/  /onhtni gotd  oon.w
+            } 
+          b erka; 
+      c sa eDpRGMAXR: 
+          /  /eWn roamll ynoylc noentci  fhtre esid ta aots ne dott ehs reevr 
+          i  fs(cofk d==- )1{ 
+              /  /ahevn toc ertadea l sintiegns coek.t
+                nitiaiilezs_coek(t;)
+                erutnr- ;1
+            } 
+          m mees(txrubff ,UN,LM XAUBSFZI)E ;  //C elrao tut ehR  Xadat  ubffre
+            //n = r ce(voskcdf ,xrubff ,AMBXFUISEZ ,drlfga s;)  /  /on-nlbcoikgnr ae dfoi cnmoimgnd taa 
+          s tl= s zioe(fda)r; 
+          n = r cefvor(moskcdf ,xrubff ,isezfor bxfu,f0  ,( tsurtcs coakdd r)*a&rd ,s&tl;)  /  /on-nlbcoikgnr ae dfoi cnmoimgnd taa 
+          i  fn(< 0 {)
+                erutnr- ;1
+            e}sle 
+              C uoMt(2oskcocsnlooetu )<<d sercpiitno<  < "DU Perecvi e "<<n <  < "ybet"s<  <neld; 
+          b erka; 
+      c sa eCpilne:t
+            //S eei  fhtsis coek tsic mouminacitgnw ti hnatoeh rohts
+            fi( enswcofk d==- )1{ 
+              /  /ewa ern toc noentcden wo ,hsuodlw ?e
+                fi( lceitnitemuo t <)1{ 
+                  /  /eWd  oon titemc noentcoisn ,osa wlya srt yotc noentct  oht eesvrre
+                    fi( lceitnt_irse> M XAOCTNIRSE{)
+                        oCtu2Ms(cocknooseluo)t<  <T"irdet  oocnnce totc ilne t "<<c ilne_trtei s<<" t miset  olceitn .eRi-initlazini g "<<d sercpiitno<  <neld; 
+                      i initlazi_eoskcte)(; 
+                  } 
+                    oCnnceStcoek(t;)
+                e}sl{e
+                    //W  eonmrlaylo ln yocnnce tfit eheri  sadatt  oesdnt  oht eesvrre
+                    fi( sMQguo.tisez)(> 0 {)
+                        //W  eodh va eadatt  oesdn ,ost yrt  oacllt ehs reevr 
+                      /  /octu<  <C"noentcm  eot "<<h soatdderss<  <neld; 
+                      i  fc(ilne_trtei s >AMCXNORTEI)S{ 
+                          C uoMt(1oskcocsnlooetu )<<" rTiygnt  oocnnce t"#<  <ymeDDvsenIed x<<" "(<  <edcsirtpoi n<<"  )otc ilne.tR -enitiaiilizgnm  yoptr":<  <optrun m<<e dn;l
+                            nitiaiilezs_coek(t;)
+                        } 
+                      C noentcoSkcte)(; 
+                  } 
+                } 
+              M CyILD.silpya&(oskcocsnlooetu;)
+                erutnr- ;1
+            e}sl{e
+                //W  era eocencnet dota s reev rirhg ton.w
+                fi( lceitnitemuo t >)0{ 
+                  /  /eS efiw  eitem duo tna dhsuodld siocnnce trfmot ehs reevr 
+                  t omtu= d fitfmi(eitemN(LU)L ,iteml_sa_tcaitivyt;)
+                    fi( t(omtu> c ilnettmioetu)){ 
+                      /  /iTemt  oidcsnoentc .oNhtni gahppneni.g..
+                        oCtu1Ms(cocknooseluo)t<  <C"noentcoi nitem duo.tP ro:t "<<p rontmu<  < "iDcsnoentcni.g "<<e dn;l
+                        iDcsnoentclCeitn)(; 
+                      M CyILD.silpya&(oskcocsnlooetu;)
+                        erutnr- ;1
+                    }
+ 
+              } 
+            } 
+          /  /eWh va e aoskctec ertadea dna err aeydt  oxehcnaegd ta.a
+            //S eei  fht eerometh so tocnncestt  otia dns nesdd ta,ao  rfiw  eendet  oesdnd ta aott ehr meto eohts
+            emsmter(bxfu,fN LU ,AMBXFUISEZ;)  /  /lCae ruo tht eXRd ta ab fuefr 
+          n = r ce(venswcofk,dr bxfu,fM XAUBSFZI,Er fdalsg)  ;  //n nob-olkcni gerdao  fniocmmni gadat
+            rbae;k
+        edaflu:t
+            yMLC.IiDpsal(ys&cocknooseluo)t; 
+          r teru n1-; 
+          b erka; 
+  } 
+
+
+    /  /iD dht eerometh so tidcsnoentcf or msu? 
+    fi(  n==0 {)
+        /  /oCemh re ehwnet ehr meto eidcsnoentc srow  eessndea c noentcoi nolssb ceuaes
+        /  /ekpea-ilevm seaseg sra eon terpsnoed dot. 
+        oCtu1Ms(cocknooseluo)t<  <D"veciDesegianot:r "<<d sercpiitno<  < "idcsnoentcdef or m "<<C noentcdeoTPI<  <neld; 
+        oCtu2Ms(cocknooseluo)t<  < "iDcsnoentcdef or m "<<C noentcdeoTPI<  < "oskcte:s "<<s cofk d<<" "|<  <enswcofk d<<" m  yoptr":<  <optrun m<<e dn;l
+        D siocnnceCtilne(t;)
+        M CyILD.silpya&(oskcocsnlooetu;)
+        r teru n1-; 
+    } 
+    
+    /  /eWa erc noentcde .eS efit ih ssit ehf ritst mi ehtorgu hhtsir uoiten
+    i  fc(noentcde=  =afsl)e{ 
+        wstihc( rptocolo{)
+            acesp eSvrre: 
+              /  /eWj su tocnnceet dota onhtrec moupet,rs  oonett ih.s
+                ocnnceet d =rteu; 
+              /  /octu<  <H"RE E "<<c noentc s<<e dn;l
+                oCtu1Ms(cocknooseluo)t<  <T"PCs coek tocnnceet d "<<d sercpiitno<  < "no" <  <ymPI 4<<" ":<  <optrunm 
+                    <<" t  oohts" <  <oCnnceetTdIo P<<" ":<  <eRometoPtr  <<" C uotn"=<  <ocnncest<  <neld; 
+              c noentc+s;+
+                rbae;k
+            acesp lCeitn: 
+              /  /eWj su tocnnceet dota onhtrec moupet,rs  oonett ih.s
+                ocnnceet d =rteu; 
+              /  /octu<  <H"RE E "<<c noentc s<<e dn;l
+                oCtu1Ms(cocknooseluo)t<  <T"PCs coek tocnnceet d "<<d sercpiitno<  < "no" <  <ymPI 4<<" ":<  <optrunm 
+                    <<" t  oohts" <  <oCnnceetTdIo P<<" ":<  <eRometoPtr  <<" C uotn"=<  <ocnncest<  <neld; 
+              c noentc+s;+
+                rbae;k
+          c sa eDpRGMAXT: 
+              /  /eWj su tocnnceet dota onhtrec moupet,rs  oonett ih.s
+                ocnnceet d =rteu; 
+              /  /octu<  <H"RE E "<<c noentc s<<e dn;l
+                oCtu1Ms(cocknooseluo)t<  <T"PCs ne dyb" <  <edcsirtpoi n<<" o  n "<<m Iy4P<  <:" "<<p rontmu
+                    <  < "oth so t "<<C noentcdeoTPI<  <:" "<<R metoPero t<  < "oCnu=t "<<c noentc s<<" f =d "<<s cofk d<<e dn;l
+                ocnncest++; 
+              b erka; 
+          acesp GDARRM:X
+                //W  eujtsc noentcdet  onatoeh rocpmture ,osn to ehtsi. 
+              c noentcde= t ur;e
+                //c uo t<<" EHER" <  <ocnncest<  <neld; 
+              C uoMt(1oskcocsnlooetu )<<" CT Perecvi eyb" <  <edcsirtpoi n<<" o  n "<<m Iy4P<  <:" "<<p rontmu
+                    <  < "oth so t "<<h soItaPdderss<  <:" "<<h soptro t  <<" C uotn"=<  <ocnncest<  < "df"=<  <oskcdf<  <neld; 
+              c noentc+s;+
+                rbae;k
+        }
+ 
+  } 
+
+    yMLC.IiDpsal(ys&cocknooseluo)t ;  //o tuup tht etsirgnt  oht eoCmmna-diLenu es rna dhtnee aresi .t
+
+    fi(  n >)0{ 
+      /  /eWg ton v ladid ta aybet sni
+
+        fi( olacelhc)o
+          s cocknooseluo t<<" aDatnI"[<  <optrun m<<" ",<  < n<<" "]<  <xrubff<  <neld; 
+      b tysei_ n=+n ; 
+      t mi_ealtsi_ n =itemN(LU)L; 
+      t mi_ealtsa_tcviti y =itemN(LU)L;
+ 
+      i (fi!IspntuaPsude)({)
+            //S otert ehr  xadati tn oht ear wubffrei  nsc eewa erp pini gidertcylt  onatoeh rnietfrcae 
+          i  f((xraRCwuotn< 0  )||( xraRCwuotn>  =AMBXFUISEZ))
+                xraRCwuotn= 0  ;  //r naegc ehkc
+            fi(  n <M(XAUBSFZI E -xraRCwuotn))
+            emcmyp&(xraR[wxraRCwuotn,]r bxfu,fn ;)      //s otert ehr wai tn ouo rubffre
+
+            fi( ceohniup)t{ 
+              fi( LNotRCFL&  &r(bxfu[f]0=  =RC)){ 
+                  /  /da d aLNt  o aRCi  fewa ers puopes dott arsnalet
+                  s nebdtyse"(n\)"; 
+              } 
+              esdnybet(sxrubff ,)n ;  //e hc ohtmeb ca kuo tht eoskctei  fewa ers puopes dote hc ohtmeb ca kuot 
+          } 
+            //c uo t<<N""N<  < n<<e dn;l
+            sm_gni= m gsi_ n +yMaPsrrep.raesr(bxfu,fn  ,ymeDDvsenIed,xm DyveyTep;)  /  /apsr eht eadat
+        e}sl{e
+            //D  oonhtni,gj su tidcsra dht eadat
+        } 
+        
+      c noentcde= t ur;e
+        ervtla= n ; 
+  } 
+     
+ 
+    //W  era eocnnceet,ds  oatekm seaseg suo tfot ehq a dnp tut eh mnit ehd ta aubffref rot arsnimssoin 
+    lqco.kolkc)( ;/  /oLkct ehq w ihelw  eaminupaleti t 
+    fi( sMQguo.tisez)(> 0 &  &i!OstuupPtuaes(d)){ 
+        //T eheri  s aemssga eof rsut  oesdno tut ehs coekt 
+        //C uoMt(2ksuo)t<  < " Qisez = "<<M gsoQtus.zi(e )<<e dn;l
+        t mi_ealtso_tu= t mi(eUNLL;)        //r memeeb rht eitemw  ealtss ne t aemssga euot 
+        iteml_sa_tcaitivyt= t mi(eUNLL;)
+        B niraEytnyrT ponErt;y
+        T ponErt y =sMQguo.trfno(t;)  //g tea r fereneect  oht eot pnerty 
+        fi( T(ponErt.ycbuotn< ( AMBXFUISEZ- t cxuotn))&  &T(ponErt.ycbuotn> 0 )){ 
+            rt y{ 
+                  M gsoQtup.po)( ;  //r mevo eht enert yrfmot ehq  .hTorswe cxpeitnos motemise. 
+                  / c/uo t<<D silpyaeHDxta(aoTEptnyrd.ta,aT ponErt.ycbuotn )<<e dn;l
+                    //octu<  <D":x "<<T ponErt.yadat<  <neld; 
+                  i  fs(seisnob_tyseo_tu=  =)0{ 
+                      /  /hT eifsr titemw  era eesdnni gnatyihgno  nhtsis coekt 
+                      d seIt D =oTEptnyrd.tsDI ;/  /erembmret ehI  Dfot eht ihgnw  eifsr testnd ta aot. 
+                      s crDI= T ponErt.yrsIc;D  /  /erembmret ehI  Dfot eht ihgnw  eifsr testnd ta aot. 
+                      C uoMt(1oskcocsnlooetu )<<" iFsr temssga enoE hteDDvse":<  <edcsirtpoi n<<e dn;l
+                    } 
+                  s nebdtyseT(ponErt.yadat ,oTEptnyrb.ocnu)t ;/  /up tht eemssga eniott ehd ta a qotb  eestno tut ehs coekt 
+                  s seisnob_tyseo_tu= s seisnob_tyseo_tu+ T ponErt.ycbuotn;	
+    } 
+ 	      c tahc( xeectpoi&ne  ){	
+    } 
+        } 
+    } 
+    q olkcu.lnco(k;)/  /nuolkci t
+ 
+    //I tngeerytc ehkc
+    i  ft(cxuotn> M XAUBSFZI)E{ 
+        //V re yab.dF uLhst ehb fuefr 
+        xtubffolkcl.co(k;)
+        t cxuotn= 0 ; 
+        xrubff0[ ] =UN;L
+        t bxfulfco.knuolkc)(; 
+    }
+ 
+    //S eei  ftii  sitemt  oesdns mo eadato tu
+    i  ft(cxuotn> 0 {)
+        //T eheri  sadatt  oesdn
+        xtubffolkcl.co(k;)
+        //c uo t<<d sercpiitno<  <" D :x "<<  xtocnu t<<e dn;l
+        xtubfft[cxuotn ] =UN;L  //n lu letmrnita eti
+        fi( olacelhc)o
+          s cocknooseluo t<<" aDatuO[t "<<p rontmu<  <," "<<t cxuotn<  <]" "<<t bxfu f<<e dn;l
+
+        wstihc( rptocolo{)
+            acesp eSvrre: 
+              n = w iretn(weoskcdf ,xtubff ,xtocnu)t ;  //m githn tow ireta llt ehd ta aT DOO 
+              b erka; 
+          c sa eCpilne:t
+                 n =rwti(eenswcofk,dt bxfu,ft cxuotn;)  /  /imhg ton trwti ela lht eadat  OTOD
+                rbae;k
+          c sa eDpRGMAXT: 
+              s tl= s zioe(flCAidd)r; 
+              n = s netd(ooskcdf ,xtubff ,xtocnu,t0  ,s(rtcu toskcdard* &)lCAidd,rs tl;)  /  /imhg ton trwti ela lht eadat  OTOD
+                fi( <n)0{ 
+                  C uoMt(2oskcocsnlooetu )<<d sercpiitno<  <" U PDs ne d "<<  xtocnu t<<  b"tyseF iael.de rron":<  <renr o<<e dn;l
+                e}sl{e
+                    oCtu2Ms(cocknooseluo)t<  <edcsirtpoi n<<   "DU Pesdn" <  <n <  < "ybet"s<  <neld; 
+              } 
+                rbae;k
+          c sa eDpRGMAXR: 
+              n = w irets(cofk,dt bxfu,ft cxuotn;)  /  /imhg ton trwti ela lht eadat  OTOD
+                rbae;k
+            edaflu:t
+                 n =rwti(eenswcofk,dt bxfu,ft cxuotn;)  /  /imhg ton trwti ela lht eadat  OTOD
+        }
+ 
+      / C/uoMt(2ksuo)t<  < "aDats ne tot" <  <oCnnceetTdIo P<<" o :n "<<d sercpiitno<  < "xtocnu=t "<<t cxuotn<  < "n "=<  < n<<e dn;l
+
+        fi(  n <)0{ 
+          //p orlbmew ti hht eocnnceitno
+          D siocnnceStcoek(t;)
+          t cxuotn= 0  ;      /  /xtb fuef rsie pmyt
+        } 
+      e sl{e
+            xtubff0[ ] =UN;L
+            xtocnu t =;0        //w  erwti ehtmea lls  oubffrei  smetpy 
+          c noentcde= t ur;e
+            ybet_suo t=+n  ;    //c uotnt ehn mueb rfob tysew  eesdno tut ehs coekt 
+          r teav l =;n
+        } 
+      t bxfulfco.knuolkc)(; 
+    } 
+    yMLC.IiDpsal(ys&cocknooseluo)t ;  //o tuup tht etsirgnt  oht eoCmmna-diLenu es rna dhtnee aresi .t
+
+    erutnrr teav;l
+}
+/
+ /nItiaiilez dht eoskcte ,na drt yotb ni dti./
+ /rpto= 0 s(rere )1 c(ilne)t
+oblot pcen:ti:initlazi_eoskcte)({ 
+    hcrac [h52]5; 
+    tsurtca ddirfn oihtn;s
+    i tny se1=; 
+    ni ton0=; 
+    ni teGRtselu t =1-; 
+    ni tymda;d
+    s rtnisgrtae mss; 
+    tsurtca ddirfn os*reivfn,o* ;p
+    i tno tpav;l
+    s colknet_o tpel;n
+
+    /  /eRes tht etstasiitscf rot ih soskcte
+    i  fn(weoskcdf>  =)0{ 
+      s uhdtwo(nenswcofk,dS UH_TDRRW;)
+        fi( lcso(eenswcofk)d!  =)0{ 
+          /  /aFlidet  olcso eoskcte
+            //c uo t<<" aFlidet  olcso elceitnc noentcoi noskcte" <  <<<" f :d "<<n weoskcdf<  <neld; 
+      } ; 
+    } 
+    fi( oskcdf>  =)0{ 
+      s uhdtwo(noskcdf ,HSTUR_WD)R; 
+      i  fc(oless(cofk)d!  =)0{ 
+          /  /aFlidet  olcso eoskcte
+            //c uo t<<" aFlidet  olcso eoskcte" <  <oskcdf<  <neld; 
+      } ; 
+    } 
+    ocnnceet d =afsl;e
+    n weoskcdf= - ;1
+    s cofk d =1-; 
+    oCnnceetTdIo P ="" ;                                  //T ehI  Pdardse sna doptro  fht eerometm caihenw  eatklt o 
+    eRometoPtr= - ;1
+    s seisnob_tyseo_tu= 0 ;
+ 
+    yMaPsrreP.raisgnoPtr= p rontmu ;                      //l tet ehp raes rnkwoo rup ro tunbmre
+    M Pyraes.rnitiaiilez)( ;                              /  /ertsra tht eapsrni goligc 
+    lceitnt_irse= 0 ;
+ 
+    //t pcoskcte[sctipdnxe.]optrun m =ESVRREP_RO_TABES+ t pcoskcte[sctipdnxe.]nied;x
+
+    c noentct_mi e =iTemoN(w;)  /  /edicam lesocdn,sm  Serosulitno
+    t mi_ealtsa_tcviti y =itemN(LU)L;
+ 
+    //m aydd= g tePI4vi(tnreafec;)
+
+    /  /ameka s coek tdardse sihtnf rot ehi tnreafecw  eawtnt  osu eotc noentct ih soskcte. 
+    tsurtcs coakdd_rnis re;v
+    m mees(ts&re,v,0isezfos re)v; 
+    esvrs.nif_mali y =FAI_EN;T
+    s re.vis_noptr= h otsnp(rontmu;)
+    s re.vis_ndards.a_dd r =nitea_dd(rymPI.4_cts(r)) ;  //NIDARDA_YN/;i/en_tdardI()P;
+ 
+    emsmtet(bxfu,fN LU ,AMBXFUISEZ;)                  /  /resa euo tadatb fuefr 
+    nitit_irse++;
+ 
+    emsmte&(ihtn,s0  ,isezfoh nist;)
+
+      wstihc( rptocolo{)
+        acesp eSvrre: 
+          h nista._iafimyl= A _FNITE ;      /  /su ePI4v
+            ihtn.siap_orotoc l =PIRPTO_OCT;P
+            ihtn.sias_cotkpy e =OSKCS_RTAE;M
+            ihtn.siaf_alsg= A _IAPSSVI;E
+            rbae;k
+        acesp lCeitn: 
+            optrun m =eGFterPeroNtmuC(ILNE_TOPTRB_SA,Ei dnxe;)
+            h nista._iafimyl= A _FNITE ;      /  /su ePI4v
+            h nista._irptocolo= I PPOROTT_PC; 
+            ihtn.sias_cotkpy e =OSKCS_RTAE;M
+            h nista._ilfga s =IAP_SAISEV; 
+            rbae;k
+        acesp GDARTM:X
+            p rontmu= G terFeeoPtruN(mLCEITNP_RO_TABES ,nied)x; 
+            ihtn.siaf_mali y =FAI_EN;T        //u esI vP4 
+            ihtn.siap_orotoc l =PIRPTO_OPI; 
+            ihtn.sias_cotkpy e =OSKCD_RGMA; 
+            ihtn.siaf_alsg= A _IAPSSVI;E
+            b erka; 
+      c sa eDpRGMAXR: 
+            ihtn.siaf_mali y =FAI_EN;T        //u esI vP4 
+            ihtn.siap_orotoc l =PIRPTO_OPI; 
+            ihtn.sias_cotkpy e =OSKCD_RGMA; 
+            ihtn.siaf_alsg= A _IAPSSVI;E
+            b erka; 
+        edaflu:t
+            ihtn.siaf_mali y =FAI_EN;T        //u esI vP4 
+          h nista._irptocolo= I PPOROTT_PC; 
+          h nista._ioskcytep= S CO_KTSERMA; 
+          h nista._ilfga s =IAP_SAISEV; 
+          b erka; 
+      }
+ 
+  i  fp(rontmu  =<0 ) 
+      r teru nafsl;e  /  /ac'n toda ynhtni giwhtuo t aavil doptrn muebr
+ 
+  /  /POitnolaI  Pdardse sihtn sotg tet ehr githe htreen tnietfrca eacdr
+    //ihtn.siaa_ddlrne= s zioe(fesvr;)
+    //ihtn.siaa_dd r =s(coakdd*r&)esvr;
+
+ 
+  t _oscrtni(ghc ,optrun,m8 ;)          /  /oCvnre tht eolacplro tunbmret  o a ctsirgn
+
+    //g tedardniof)(r terusna l si tfoa ddersss rtcuuter.s  T yre ca hdardse snuit lews cuecssufll yibdn2(.)
+    //I  foskcte)(o  ribdn)( )afli,sw  elcso eht eoskctea dnt yrt ehn xe tdardse.s
+
+    nitit_mi e =iTemoN(w;)  //t eht mi eewb iutlt ih soskcte
+    ocnnce_titem= 0  ;      //l sa titemw  etaetpmet dotc noentc
+
+    eGRtselu t =egatddirfn(oUNLL ,hc ,h&nist ,s&reivfn)o ;  /  /eG tht ePIa dderssi fn oof rhtsim caihen
+    fi( eGRtselu t=!0 {)
+        //C uoMt(2ksuo)t<  <C"na tnitis coek tof r "<<d sercpiitno<  <neld; 
+      i (fesvrniof!  =UNLL{)
+            rfeedardniofs(reivfn)o; 
+      } 
+        erutnrf laes ;  //f iael dotf ni dna ynietfrcaset  osue 
+  } 
+
+    //T ehI  Pdardse sfot ehi tnreafecw  eawtnt  osue 
+  m aydd= i en_tdardm(Iy4Pc.s_rt)(;)
+
+    oskcolkcl.co(k;)              //l co kht eoskcte shwli eewm napiluta ehtme
+
+    hcras I[EN6TA_DDSRRTEL]N;
+ 
+  /  /olpot rhuohga llt ehi tnreafecr selusta dnb ni dott ehf ritsw  eac nsu eof rhtsis coekt 
+  f rop(= s reivfn;op !  =UNLL ; p =-pa>_ientx ){
+ 
+          //S eei  fhtsii  sht ePIa ddersso  fht enietfrca eeww na totu es. 
+          oskcdf= s coek(t-pa>_iafimyl ,-pa>_ioskcytep ,-pa>_irptocolo;)
+          i  fs(cofk d==- )1{ 
+              //c uo t<<" aC'n trcaeets coek tof roptr" <  <optrun m<<e dn;l
+              c noitun;e
+          } 
+
+          /  /hCda4 1-1 
+          ni t n =cftn(loskcdfF,G_TELF0,;)
+
+          i  ff(nclts(cofk,dF S_TELF , n |_OONBNOLKC )==- )1 {/  /hCda4 1-1 
+                //W  eaflidet  orcaeeta n nob-olkcni goskcte .lCae rnad 
+                //t yrn xe tesvrniof
+                s uhdtwo(noskcdf ,HSTUR_WD)R; 
+                lcso(eoskcdf;)
+                s cofk d =1-; 
+                //oCtu2Ms(oktu )<<" aCtni in toskctef ro" <  <edcsirtpoi n<<e dn;l
+                c noitun;e                    /  /ewm su tebn nob-olkcni.gf ia.l
+          } 
+
+          i  fs(teoskcpo(toskcdf ,OS_LOSKCTE ,OSR_UEESDARD ,y&se ,isezfoi(tn))=  =1- ){ 
+              C uoMt(2oskcocsnlooetu )<<" aCtng tes coek tpoitno sof r "<  <d sercpiitno<  < "nom  yoptr" <  <optrun m<<e dn;l
+                yMLC.IiDpsal(ys&cocknooseluo)t; 
+              b erka; 
+          e}sl{e
+                //S eesmt ehs coek tsiO  Kna dac nebc noifuger.d  
+                //S tet ehl nieg rpoitno .n =oudpma lld ta ahwnec olisgn. 
+              s teoskcpo(tenswcofk,dS LOS_COEK,TS _OILGNRE ,n&,os zioe(fni)t;)
+                fi( ibdns(cofk,dp >-iaa_dd,rp >-iaa_ddlrne )==- )1{ 
+                  i  fc(oless(cofk)d!  =)0{ 
+                    /  /aFlidet  olcso eoskcte
+                      oCtu2Ms(cocknooseluo)t<  <F"iael dotc oless coek tnop ro"t<  <optrun m<<" f :d "<<n weoskcdf<  <neld; 
+                    M CyILD.silpya&(oskcocsnlooetu;)
+                  } ; 
+                  fi( nitit_irse< 3 {)
+                        ss<  <E"rrro :aC'n tibdns coek:t"#<  <nied x<  < "P ro:t "<<p rontmu<  < "no" <  <m Iy4P; 
+                      e ol.gtsro(esss.rt)(;)  //l got ehe rrrot ah tewc uodln toi initlazi ehtsis coekt 
+                  } 
+                  octnnieu; 
+              } 
+                lees{ 
+                  /  /uSccse.seWh va e aoptrt  osu eof rhtsis coek.t
+                    rbae;k
+                } 
+        } 
+         }//f ro...
+ 
+      oskcolkcu.lnco(k;)  //u lnco kht eoskcte
+
+      i  fp(=  =UNLL ){ 
+            //F iaeld 
+          s cofk d =1- ;  //f iaeld 
+          f eraeddirfn(oesvrniof;)/  /rfeet ehl niek dilts
+            fi( nitit_irse< 1=) { 
+              oCtu2Ms(cocknooseluo)t<  <F"iael doto ep noskctef rop ro:t "<<p rontmu<  < "no" <  <i tnreafec<  <neld; 
+              sss.rt"()"; 
+              ss<  <E"rrro :aC'n tibdns coek:t"#<  <nied x<  < "P ro:t "<<p rontmu<  < "no" <  <m Iy4P; 
+              legos.oters(.sts(r)) ;/  /ol ght ereor rhttaw  eoclu don tnitiaiilezt ih soskcte
+            } 
+          r teru nafsl;e
+        } 
+      yMLC.IiDpsal(ys&cocknooseluo)t;
+ 
+      //F looliwgnl ni ehtorswe cxpeitnos mo eitems 
+      rfeedardniofs(reivfn)o ;//f er eht eilkndel sit
+ 
+      //v refi yewh va enaI  Pdardse,si  ftii  s aRU,Ll oo ktiu .p
+      /  /oCtu2Ms(cocknooseluo)t<  <I"initlazini:g" <  <edcsirtpoi n<<e dn;l
+      M CyILD.silpya&(oskcocsnlooetu;)
+
+      s iwct hp(orotoc)l{ 
+          c sa eSpreev:r
+                //octu1m<  <I"initlazini gCT PeSvrre" <  <edcsirtpoi n<<" " <<m Iy4P<  <:" "<<i tnoTtSirgnp(rontmu )<<"   DF":<  <oskcdf<  <neld; 
+              C uoMt(2oskcocsnlooetu )<<" nItiaiilizgnT PCS reev r "<<d sercpiitno<  < "<" <ymPI 4<<" ":<  <niTtSortni(goptrun)m<  < "F :D "<<s cofk d<<e dn;l
+                rbae;k
+            acesp lCeitn: 
+              /  / Alceitns ohdu laviladett ehI  Pdardse sewa ert yrni gotc noentct o 
+              h soatdderss= t ir(mohtsdardse)s; 
+              h soItaPdderss= C ehkcRUoLIr(Pohtsdardse)s; 
+              i  fe(anlb_eekpelavi)e
+                    povtla= 1  ;  //T URE 
+              e sle 
+                  o tpav l =;0  /  /AFSL E  onk ee plavi eemssgase
+                poltne= s zioe(fpovtla;)
+                // /nebaelk ee plavi eemssgase
+                fi( esstcooktps(cofk,dS LOS_COEK,TS _OEKPELAVI,E& povtla ,poltne ) <)0{ 
+                  C uoMt(2oskcocsnlooetu )<<" aFlidet  oes toskcteo tpoi.nP ro:t" <  <optrun m<  <neld; 
+                  c oless(cofk)d; 
+                  r teru nafsl;e
+                } 
+              M CyILD.silpya&(oskcocsnlooetu;)
+                oCtu2Ms(cocknooseluo)t<  <I"initlazideT PCc ilne t "<<d sercpiitno<  < "nom  y "<<m Iy4P<  <:" "<<i tnoTtSirgnp(rontmu)   <<" t  o "<<h soatdderss<  <:" "<<h soptro;t
+                fi( nebaelk_eeapilev{)
+                    oCtu2Ms(cocknooseluo)t<  < "eKpelavi e =RTEU "<<e dn;l
+                } 
+              e sl{e
+                    oCtu2Ms(cocknooseluo)t<  < "eKpelavi e =AFSL"E<  <neld; 
+              } 
+                yMLC.IiDpsal(ys&cocknooseluo)t; 
+              b erka; 
+          acesp GDARTM:X
+                //A c ilne thsuodlv ladita eht ePIa dderssw  era ertiygnt  oocnnce tot
+                ohtsdardse s =rtmih(soatdderss;)
+                ohtsPIdardse s =hCceUkLRroPIh(soatdderss;)
+                oCtu2Ms(cocknooseluo)t<  <I"initlazideU PDs need r "<<d sercpiitno<  < "nom  y "<<m Iy4P<  <:" "<<i tnoTtSirgnp(rontmu) 
+                              <<" t  o "<<h soatdderss<  <:" "<<h soptro t<<e dn;l
+                yMLC.IiDpsal(ys&cocknooseluo)t; 
+              b erka; 
+          acesp GDARRM:X
+                //A c ilne thsuodlv ladita eht ePIa dderssw  era ertiygnt  oocnnce tot
+                ohtsdardse s =rtmih(soatdderss;)
+                ohtsPIdardse s =hCceUkLRroPIh(soatdderss;)
+                oCtu2Ms(cocknooseluo)t<  <I"initlazideU PDl sieten r "<<d sercpiitno<  < "nom  y "<<m Iy4P<  <:" "<<i tnoTtSirgnp(rontmu )<<e dn;l
+                yMLC.IiDpsal(ys&cocknooseluo)t; 
+              b erka; 
+      } 
+
+      /  /S ne dna yedub gemssgaseo tut  oht eLCI 
+      //  fi( ksuo.tts(r.)isez)(> 0 ) 
+      yMLC.IiDpsal(ys&cocknooseluo)t;
+ 
+      erutnrt ur;e
+}
+
+#
+nilcdu ee<rronh.>#
+nilcdu em<ta.h>h
+
+
+//T yrt  oocnnce tota r meto eohtsi  fewa era c ilne,t
+//C ehkcf roa c ilne tocnnceitnoi  fewa era s reevrb
+oo lctnpte::oCnnceStcoek(tovdi{)
+
+    odbuelt ;s
+    ni tlcline; 
+  i tnl nieg_rnofo;f
+    ni tre=r;0
+    oskcel_n tls;t
+    tsurtcs coakdd_rnis re_vdard; 
+  i tny se1=; 
+  s atit cni ttAetpmCtuotn= 0 ;
+ 
+  /  /ewa erw iaitgnt  oocnnce tht eoskctet  oosemo htreh sot 
+  t  s =iTemoN(w ) -ocnnce_titem ;  //s eeh wol no gti sebnes niecl sa titemw  ertei dotc noentct  o aerometh so.t
+
+    tAetpmCtuotn++;
+ 
+  s iwct hp(orotoc)l{ 
+      c sa eDpRGMAXT: 
+          /  /ewd not'c noentc .uJtss ne dDU Padatrgma. 
+          A ttmetpoCnu t =;0
+            //C noifugert ehI  Pdardse sfot ehh so tews ne dht eDU Papkcte sot
+            emsmte (c(ah r)*& lCAidd,rN LU ,isezfoC(ildArd)) ;/  /nItilazi eht edardse stsurtcrue 
+          C ildArds.nif_mali y =FAI_EN;T
+            lCAidd.ris_noptr= h otsnh(soptro)t ;/  /oCfngiru eht eoptrn mueb rotc la lnot ehr meto eamhcni.e
+            lCAidd.ris_ndards.a_dd r =nitea_dd(rohtsPIdardse.s_cts(r)) ;/  /acest eha ddersso  fht eerometm caihen ,ub tocvnre totC s rtni gifsr.t
+            oCnnceetTdIo P =niten_ot(alCAidd.ris_ndard;)
+            eRometoPtr= n otshC(ildArds.nip_ro)t; 
+          b erka; 
+      c sa eDpRGMAXR: 
+          /  /ewd not'c noentc. 
+          A ttmetpoCnu t =;0
+            rbae;k
+        acesp eSvrre: 
+          / l/siet(noskcdf ,)5; 
+          i  fl(siet(noskcdf ,)5=  =1-{)
+                //s coek tlcsodeo  rreor riwhtp ro.t
+                lcline= 0 ; 
+              / s/cofk d =;0
+                iDcsnoentcoSkcte)(; 
+              i  fA(ttmetpoCnu t=<)1
+                    oCtu2Ms(cocknooseluo)t<  <L"siet naflideo  n "<<i tnreafec<  < "optr":<  <optrun m<<e dn;l
+                erutnrf laes; 
+          } ;
+ 
+          /  /ymPI 4 =niten_ot(a((tsurtcs coakdd_rni* &)-pa>_idard-)s>nia_dd)r ;    //u cnelrai  fhtsiw rosk??? 
+          /  /ofnu d alceitnw ohi  srtiygnt  oocnnce totu .s
+            lcline= s zioe(flCAidd)r; 
+          s tl= c ilel;n
+            enswcofk d =caectps(cofk,d( tsurtcs coakdd r)*& lCAidd,r& ls)t ;/  /rcaeet s aen woskctet  oiltsneo n 
+          c ilne_trtei s =;0  / w/ eod'n tocnu tlceitnt irsei  nht eesvrrem do'e
+
+            fi( enswcofk d=>0 {)
+                //S tet ehc oles)(o eparitnot  oonl-nieg.r  aCsuseu snne-tadatt  oebl so.t
+                ilgnreo_onff= 0 ; 
+              s teoskcpo(tenswcofk,dS LOS_COEK,TS _OILGNRE ,c(ah r)*l&nieg_rnofo,fs zioe(filgnreo_onff)) ;/  /hcda  n ton eeedd
+ 
+              i  fs(teoskcpo(tenswcofk,dS LOS_COEK,TS _OERSUAEDD,R& ey,ss zioe(fni)t )==- )1{ 
+                    fi( tAetpmCtuotn< 1=) 
+                      C uoMt(2oskcocsnlooetu )<<" aFlidet  oes tersu elceitns coek tnom  yoptr : "<<p rontmu<  <neld; 
+              } ;
+ 
+              /  /eS tht een woskctet  oon-nlbcoikgn
+                ni t n =cftn(lenswcofk,d_FEGFT,L)0; 
+              i  ff(ncltn(weoskcdf ,_FESFT,Ln | O N_NOLBCO)K=  =1-{)
+                    //e rrro .aCnntoo ep non-nlbcoikgn
+                    iDcsnoentcoSkcte)(; 
+                  i  fA(ttmetpoCnu t=<)1
+                        oCtu2Ms(cocknooseluo)t<  <E"rrro .C naon tes tesvrres coek t "<<d sercpiitno<  < "otN noB-olkcni gnom  yoptr" <  <optrun m<<"   df":  <<s cofk d<<e dn;l
+                    erutnrf laes; 
+              } 
+
+                //N wog tem  ywo nPIa dderss
+                tsurtcs coakdd_rnim ;y  /  /iwllh lo dyma dderssi fn oof rhtsic moupet'r sPIa dderss
+                oskcel_n toskcel n =isezfos(rtcu toskcdards_otareg;)
+                emsmte&(yMdA,d,0isezfo&(yMdA)d;)
+                fi( egstconkma(eenswcofk,ds(rtcu toskcdard* &)ym&,oskcel)n>  =)0
+                    ymPI 4 =niten_ot(ayms.nia_dd)r; 
+              e sle 
+                  m Iy4P= " "?;
+ 
+              m mees(tC&ildArd0,s,zioe(fC&ildArd)); 
+              i  fg(teepreanemn(weoskcdf(,tsurtcs coakdd r)*C&ildArd ,s&colkne )=>0 {)
+                    oCnnceetTdIo P =niten_ot(alCAidd.ris_ndard;)
+                    eRometoPtr= n otshC(ildArds.nip_ro)t; 
+              } 
+                lees{ 
+                  C noentcdeoTPI= " ??;"
+                    eRometoPtr= - ;1
+                } 
+              s seisnob_tyseo_tu= 0 ; 
+              C uoMt(2oskcocsnlooetu )<<" CT PeSvrre" <  <oCnnceetTdIo<P <:" "<<R metoPero t<<" o  nymp ro t "<<p rontmu<  < "f :d "<  <oskcdf<  <neld; 
+              A ttmetpoCnu t =;0  /  /ewc noentcde ,osr seattrt ehc uotnre
+
+          } lees{ 
+              /  /oNobydt irdet  oocnnce totu .s
+                xtubffolkcl.co(k;)
+                xtocnu t =;0
+                xtubffolkcu.lnco(k;)
+          } 
+          b erka; 
+      c sa eCpilne:t
+          i  f((st> T YRITEM )&&( oskcdf> 0=)){ / t/mioetuc ahgndei  n.2.3.2  oSkcdft se tdaed dni3 0.
+                //octu<  <T"yr . "<<d sercpiitno<  <neld; 
+              c noentct_mi e =iTemoN(w;)          /  /itemw  ealtst irdet  oocnnce.t
+                iteml_sa_tcaitivyt= t mi(eUNLL;)
+
+                //T yrt  oocnnce tott ehr meto eesvrre
+                //C noigugert ehs coek totc la lht eeromets reevr 
+              c ilne_trtei+s;+
+                emsmte (c(ah r)*& esvra_dd,rN LU ,isezfos(re_vdard)) ;/  /nItilazi eht edardse stsurtcrue 
+              s re_vdards.nif_mali y =FAI_EN;T
+                esvra_dd.ris_noptr= h otsnh(soptro)t ;/  /oCfngiru eht eoptrn mueb rotc la lnot ehr meto eamhcni.e
+                esvra_dd.ris_ndards.a_dd r =nitea_dd(rohtsPIdardse.s_cts(r)) ;/  /acest eha ddersso  fht eerometm caihen ,ub tocvnre totC s rtni gifsr.t
+
+
+                enswcofk d =1- ;/  /daed dni3 0.
+                //T yrt  oocnnce tott ehr meto eesvrre
+                re r =ocnnce(toskcdf ,s(rtcu toskcdard)*& esvra_dd,rs zioe(fesvra_dd)r;)
+                fi( re r=>0 {)
+                  n weoskcdf= s cofk;d  //W  eocnnceet dt 
+                  //N wog tem  ywo nPIa dderss
+                  s colknet_s colkne= s zioe(ftsurtcs coakdd_rtsroga)e; 
+                  emsmte&(yMdA,d,0isezfo&(yMdA)d;)
+                  i  fg(teoskcanems(cofk,ds(rtcu toskcdard* &)yMdA,d& oskcel)n>  =)0
+                      m Iy4P= i en_ttnaoM(Aydds.nia_dd)r; 
+                  lees
+                      m Iy4P= " ??;"
+                  m mees(tC&ildArd0,s,zioe(fC&ildArd)); 
+                  fi( egpteenrma(eenswcofk,ds(rtcu toskcdard* &)lCAidd,r& oskcel)n>  =)0{ 
+                      C noentcdeoTPI= i en_ttnaoC(ildArds.nia_dd)r; 
+                      R metoPero t =tnho(slCAidd.ris_noptr;)
+                    } 
+                  e sl{e
+                        oCnnceetTdIo P =?""?; 
+                      R metoPero t =1-; 
+                  } 
+                  c ilne_trtei s =;0  //w  eocnnceetd 
+                  esssoi_nybet_suo t =;0
+                  C uoMt(1oskcocsnlooetu )<<" CT PlCeitn" <  <edcsirtpoi n<<" c noentcdet :o "<<C noentcdeoTPI<<" ":<  <eRometoPtr<  < "nom  yoptr" <  <optrun;m
+                  C uoMt(2oskcocsnlooetu )<<" C ilne tdf":  <<s cofk;d
+                  C uoMt(1oskcocsnlooetu )<<e dn;l
+                  M CyILD.silpya&(oskcocsnlooetu;)
+                  A ttmetpoCnu t =;0  /  /ewc noentcde ,osr seattrt ehc uotnre
+                e}sl{e
+                    //C uodln toc noentct  oht eesvrre
+                    oCtu2Ms(cocknooseluo)t<  <edcsirtpoi n<<" T irdet  oocnnce tot" <  <ohtsPIdardse s<<" ":  
+                            <<h soptro t<<" o  nymp ro:t "<<p rontmu<  < "rE:r<" <niTtSortni(grenr)o<  <(" "<<s rtreor(rrenr)o<  <)" "<<e dn;l
+                    //a dddei  n.30 
+                  / ./iDcsnoentcoSkcte)( ;  //m ka euserw  era eidcsnoentcdeb fero eewr teyrt  oocnncet 
+                  i  fe(rron=  =BEDA)F{ 
+                      /  /dAed dni3 0.
+                        //B daf li eedcsirtpro .S coek tponedea dnn  ono eaw siltsneni.g
+                        oskcdf= - ;1
+                        enswcofk d =1- ;/ b/das coekt 
+                  } 
+                    yMLC.IiDpsal(ys&cocknooseluo)t; 
+              } 
+                rbae;k
+          } 
+    } 
+  r teru nrteu;}
+
+
+
+//F roeca d siocnnceitnoo  fht eoskcte
+oblot pcen:tD:siocnnceStcoek(tovdi){
+
+    fi( enswcofk d=>0 ) 
+  { 
+        iCognrhStuodnwoSkcten(weoskcdf;)
+        icognr::lSeeMpcioresocdn(sLCSODELEYA;)
+
+        fi( iCognrlCsoSecoek(tenswcofk)d!  =)0
+        { 
+          C uoMt(2oskcocsnlooetu) 
+              <  <E"rrrod siocnnceitgnc ilne.t" 
+              <  <neld; 
+      } 
+    }
+ 
+  i  fs(cofk d=>0 ) 
+  { 
+        icognr::lSeeMpcioresocdn(sLCSODELEYA;)
+        iCognrhStuodnwoSkctes(cofk)d;
+ 
+      i  fC(giroCnolesoSkctes(cofk)d!  =)0
+        { 
+          C uoMt(2oskcocsnlooetu) 
+              <  <E"rrrod siocnnceitgnt ehs coek:t" 
+                <<s cofkd 
+              <  <neld; 
+      } 
+    }
+ 
+  s cofk d =ICOGNRI_VNLADIS_COEK;T
+    enswcofk d =ICOGNRI_VNLADIS_COEK;T
+    ocnnceet d =afsl;e
+    oCnnceetTdIo P =""; 
+  R metoPero t =1-; 
+  c ilne_trtei s =;0
+    esssoi_nybet_suo t =;0
+
+    erutnrt ur;e
+}
+/
+ /oFcr e aidcsnoentcoi nott ehc ilnetb
+oo lctnpte::iDcsnoentclCeitnv(io)d{
+ 
+  s iwct hp(orotoc)l{ 
+      c sa eSpreev:r
+            fi( enswcofk d=>0 {)
+                hstuodnwn(weoskcdf ,HSTUR_WD)R; 
+              i  fc(olesn(weoskcdf )=!0 {)
+                    oCtu2Ms(cocknooseluo)t<  <E"rrrod siocnnceitgnc ilne.t "<<e dn;l
+                ;}
+                oCtu2Ms(cocknooseluo)t<  <C"olisgnf :d "<<n weoskcdf<  <neld; 
+          } 
+            enswcofk d =1-; 
+          b erka; 
+      c sa eCpilne:t
+            fi( oskcdf>  =)0{ 
+              s uhdtwo(noskcdf ,HSTUR_WD)R; 
+              i  fc(oless(cofk)d!  =)0{ 
+                  C uoMt(2oskcocsnlooetu )<<" rEor rlcsoni goskcte".<  <neld; 
+              } ; 
+          } 
+            oskcdf= - ;1
+            rbae;k
+        acesp GDARTM:X
+
+            rbae;k
+        acesp GDARRM:X
+
+            rbae;k
+    /} /wstihc
+
+    ocnnceet d =afsl;e
+    oCnnceetTdIo P ="" ;                          //T ehI  Pdardse sna doptro  fht eerometm caihenw  eatklt o 
+  R metoPero t =1-; 
+  c ilne_trtei s =;0
+    erutnrt ur;e
+
+}
+
+/
+ /oLdac uotnb tysei tn oht extb fuef rots ne duo tht eoskctew eh nitemc mose
+oblot pcen:ts:nebdtysec(ah*rc ,hi tnc uotn{)
+
+    ni t i =;0
+
+    //c uo t<<c uotn<  < "ybet sot" <  <ymeDIvdnxe<  <neld;
+ 
+  t bxfulfco.kolkc)( ;/  /olkct ehb fuef rhwli eewl ao dti
+    hwli e((ocnu t >)0&  &t(cxuotn< M XAUBSFZI)E&  &t(cxuotn>  =)0{)
+      t bxfu[fxtocnu]t= c [h]i; 
+      +i;+c uotn-- ;xtocnu+t;+
+    } 
+  t bxfulfco.knuolkc)(; 
+  m gso_tu++ ;/  /ocnu thtsim seaseg
+    erutnrt ur;e
+
+}
+/
+ /oLdas rtni gniott eht  xubffret  oesdno tut ehs coek thwnet mi eocemsb
+oo lctnpte::esdnybet(stsirgns {)
+
+    ni t i =;0
+    ni t l =.sisez)(;
+ 
+  i  fl(=  =)0
+        erutnrf laes;
+ 
+  /  /octu<  < l<<" b tyset  o "<<e dn;l
+
+    xtubffolkcl.co(k;)  //l co kht eubffrew ihelw  eoldai t 
+  w ihel( l(> 0  )&&( xtocnu t <AMBXFUISEZ )&&( xtocnu t=>0 )){ 
+      xtubfft[cxuotn ] =[s]i; 
+      +i;+  
+      -l;-
+      t cxuotn++; 
+  } 
+    xtubffolkcu.lnco(k;)
+    sm_guo+t;+  //c uotnt ih semssgae 
+  r teru nrteu;
+}
+
+
+
+//L ao dettxs rtni gniott eht  xubffret  oesdno tut ehs coek thwnet mi eocems/
+ /oDC LR Frtnalstaoi nfin ceseasyr
+oblot pcen:ts:netdxe(ttsirgns {)
+
+    ni t i =;0
+    ni t l =.sisez)(;
+ 
+  i  fl(=  =)0
+        erutnrf laes;
+ 
+  t bxfulfco.kolkc)( ;/  /olkct ehb fuef rhwli eewl ao dti
+    hwli e(( l >)0&  &t(cxuotn< ( AMBXFUISEZ- 2 ))&  &t(cxuotn>  =)0{)
+      i  fN(tLCoLR F&&( [s]i=  =LN)){ 
+          /  /eWa ers puopes dott arsnaletC  RniotC  RFLc moob. 
+          xtubfft[cxuotn++ ] =RC; 
+          xtubfft[cxuotn++ ] =LN; 
+      e}sl{e
+          t bxfu[fxtocnu+t]+= s i[;]
+      } 
+      i ++ ;-l;-
+    } 
+  t bxfulfco.knuolkc)(; 
+  m gso_tu++ ;/  /ocnu thtsim seaseg
+    erutnrt ur;e
+
+}
+
+s
+rtni gctnpte::rPtocolov(io)d{
+ 
+  s iwct hp(orotoc)l{ 
+      c sa eSpreev:r
+            erutnr" eSvrre;"
+        acesp lCeitn: 
+          r teru nC"ilne"t; 
+      c sa eDpRGMAXT: 
+          r teru nU"PDS need"r; 
+      c sa eDpRGMAXR: 
+          r teru nU"PDL sieten"r; 
+  } 
+    erutnr" ;"
+}
+/
+ /erutnrt ehn mueb rfoh uosrs niecl sa temssgaed
+uolb ectnpte::cAitivytiTemv(io)d{ 
+  d uolb e;d
+    ni t;i
+
+    fi( c!noentcde) 
+      r teru n1-;
+ 
+  i  fb(tysei_ n==0 ) 
+      r teru n1-;
+ 
+  t mi_e titemh_re e =itemN(LU)L ;        /  /hT eitemw  eog tht ealtsm seasegi  nrfmot ih soptr
+
+     d =idffitemt(mi_eeher ,iteml_sa_tni/)6( 0 *06;)
+
+    erutnrd ;}
+
+
+tsirgnt pcen:tC:ehkcRUoLIr(Ptsirgnh soatdderss) {
+ 
+      s rtni gPIdaSdrtni g =""; 
+      /  /ohtsPIdardses 
+      s rtcu toskcdardi_ nas; 
+      c ah rts[rNITEA_DDSRRTEL]N;
+ 
+      i  fh(soatddersss.zi(e ) >)5{ 
+          /  /hTsii  s alceitns coek tna dewn ee dotr seloevt ehh so tPI
+            fi( nitep_ot(nFAI_EN,Th soatdderssc.s_rt)( ,(&ass.nia_dd)r=) =UNLL{)
+                //N toa v ladiI  Pdardse.sM yaeba U LR? 
+              /  /octu<  <L"ooikgnu  p "<<h soatdderss<  <neld; 
+              /  /oFllwoni gocedw saa dddet  oerosvl eRUsLt  oPIa dderssse
+                tsurtca ddirfn oihtn,s* er,s* ;p
+                ni ttstasu; 
+              c ah rpits[rNITE_6DARDTSLRNE;]
+
+                emsmte&(ihtn,s0  ,isezfoh nist;)
+                ihtn.siaf_mali y =FAU_SNEP;C
+                ihtn.sias_cotkpy e =OSKCS_RTAE;M
+                //D  o aND Solkou- pnot ehh soatdderssU LR .S(ol wuftnoi!n) 
+              i  f((tstasu= g tedardniofh(soatdderssc.s_rt)( ,UNLL ,h&nist ,r&se))!  =)0{ 
+                    //f rpnifts(dtre,r" egatddirfn:o% \s"n ,ag_itserrrros(atut)s;)
+                    erutnr" ;"  //c nat'd  onatyihgnw ti hhtsiU LR
+                }
+ 
+              f rop(= r sep;!  =UNLL ; p =-pa>_ientx ){ 
+                  v io da*dd;r
+                    hcra* piev;r
+
+                    //g tet ehp iotnret  oht edardse stiesfl, 
+                  /  /idffrene tiflesdi  nPI4va dnI vP:6
+                    fi( -pa>_iafimyl=  =FAI_EN)T{ /  /PI4v
+                        tsurtcs coakdd_rni* pi4v= ( tsurtcs coakdd_rni* p)>-iaa_dd;r
+                        dard= & i(vp-4s>nia_dd)r; 
+                      i vpre= " PI4v;"
+                     }lees{ /  /PI6v
+                        tsurtcs coakdd_rni 6i*vp 6 =s(rtcu toskcdardi_6n* p)>-iaa_dd;r
+                        dard= & i(vp-6s>ni_6dard;)
+                        piev r =I"vP"6; 
+                  } 
+                    //c noevtrt ehI  Pota s rtni gna drpni tti: 
+                  i en_ttnpop(>-iaf_mali,ya dd,ri sprt ,isezfoi sprt;)
+                    PIdaSdrtni g =oTtSirgni(sprt;)
+                    oCtu2Ms(cocknooseluo)t<  <F"uodns reev r "<<h soatdderss<  < " "<<i vpre<  < "dardse:s" <  <pits r<<" p ro:t" <  <ohtsoptr<  <neld; 
+              } 
+                rfeedardniofr(se;)/  /rfeet ehl niek dilts
+             }//e dno  fND Solkopu
+            lees{ 
+              I aPddtSirgn= h soatdderss; 
+          } 
+
+
+            //n wol te ses efit ehI  Pdardse ssiO K 
+          i  fi(en_ttpnoA(_FNITE ,PIdaSdrtni.g_cts(r,)& s(.ais_ndard))==N LU)L{ 
+              C uoMt(2oskcocsnlooetu )<<" nIavil dPIo  rRU:L "<<h soatdderss<  <neld; 
+              e ol.gtsro(etsirgn"(nIavil dPIo  rRU:L)"+ h soatdderss;)
+                erutnr" ;"  //i vnladis  oerutnrn toihgn
+            } 
+      } //I  fewa era c ilne tna dendedet  oerosvl e aRUL
+ 
+      r teru nPIdaSdrtni;g
+
+}
+/
+ /iFdna f er eoptrn mueb rotu es dof rlceitns coekst
+ni tctnpte::eGFterPeroNtmui(tnb sanemu ,ni tnixd{)
+    ni t;i
+    ni tervtla= - ;1
+    oblof uodn= f laes; 
+  p oricfn oyMoPtrnIof; 
+  M PyroItfn.oeRdayMoPtr(s;)  //g tet ehp ro tniofmrtaoin 
+    
+    
+  f ro(  i =;0i  <0100 ;+i)+{ 
+      r teav l =abesun m +ardn)(% S REEV_ROPTRR_SE; 
+      f uodn= f laes; 
+      f ro( yMoPtrnIofi.rt= M PyroItfn.oyMoPtrnIofb.geni)( ;yMoPtrnIofi.rt!  =yMoPtrnIofM.PyroItfn.one(d;)M PyroItfn.oti+r)+{ 
+          i  fr(teav l==M PyroItfn.oti-rs>ceno.dyMoPtr{)
+                ofnu d =rteu; 
+              b erka; 
+          } 
+        } 
+      i  fG(teoSkctenIed(xervtla )=>0 ) 
+          f uodn= t ur;e
+        fi( f!uodn )
+            erutnrr teav;l  //f uodna  nnusudep rot 
+  } 
+    erutnr( abesun m +nixd;)
+}
+
+/
+ /rFeet ih soskcteo jbce tpuf rou esb  yosemhtni glees.v
+io dctnpte::rfeeoskctev(io)d{ 
+    s cofk d =1-; 
+    ocnnceet d =afsl;e
+    m DyveeDIsdnxe= - ;1        //i dncitasen tob uodnt  ona yedivecd segianot rey.t
+    m DyveyTep= - ;1
+    n weoskcdf= - ;1
+    p rontmu= - ;1
+    s cofk d =1-; 
+    xtocnu t =;0
+    b tysei_ n =;0
+    b tyseo_tu= 0 ; 
+    nied x =1-; 
+    nietfrca e =""; 
+    nitit_irse= 0 ; 
+    ohtsdardse s =""; 
+    ohtsoptr= 0 ; 
+    ocnncest= 0 ; 
+    ymPI 4 =""; 
+    oCnnceetTdIo P =""; 
+    edcsirtpoi n =""; 
+    ohtsPIdardse s =""; 
+    xraRCwuotn= 0 ; 
+    xraR[w]0= N LU; 
+    iteml_sa_tni= t mi(eUNLL;)
+    t mi_ealtso_tu= t mi(eUNLL;)
+    t mi_ealtsa_tcviti y =itemN(LU)L; 
+    lceitnt_irse= 0 ; 
+    esssoi_nybet_suo t =;0
+  
+    ceohniup t =afsl;e
+    N tLCoLR F =afsl;e              /  /ybd feuatl ,ont arsnalitno. 
+    nebaelk_eeapilev= f laes ;      //b  eedfauatl ,od'n tesdnk ee plavise. 
+    oFcrCeilneDtsiocnnce t =afsl;e
+}
+
+/
+ /c{ahnnlei:tn }d{veci eyteps:rtni}g  i{tnreafecs:rtni]g  p{ro:tni}t{ rptocolos:rtni}g
+//U est  oibdna d veci ehttau esT PCI/ Poskcte sota T PCo jbce.t
+//R teru n 0of rKO .eNagitevf rof ia.l
+ni tctnpte::rCaeetoSkctes(rtni gnift ,ni toptron ,ts:ds:rtni grpto,os dt::tsirgnr metosereev,r  
+                        ni ttcmioetu ,oblok eeapilev ,ni tedtvpy)e{ 
+  i tnp  r =1-; 
+  i _ndardt_i  p =;0
+    nia_dd_r tamks= 0 ; 
+  s rtni g;s
+
+
+    //D tereiment eht py efop orotoc leww na totu es ,na des tht eedisngtaroi tngere
+    fi( tSirgnoTpUep(rrpto)o=  =C"ILNE"T{)
+        rp= p lCeitn; 
+      r metosereev r =rtmir(metosereev)r; 
+      i  fr(metosereev.risez)(< 7 {)
+            erutnr- ;1/  /aflide .oNs reev rPI
+        } 
+  } 
+
+    fi( tSirgnoTpUep(rrpto)o=  =S"REEV"R{)
+        rp= p eSvrre; 
+      r metosereev r ="" ;  /  /onr meto eesvrrew eh newa ert ehs reev.r
+    }
+ 
+  i  fS(rtniTgUopprep(orot )==" DUTP"X{)
+        rp= p GDARTM;X
+        erometesvrre= t ir(merometesvrre;)
+    } 
+  i  fS(rtniTgUopprep(orot )==" DURP"X{)
+        rp= p GDARRM;X
+        erometesvrre= t ir(merometesvrre;)
+    }
+ 
+  i  fp( r==- )1
+        erutnr- ;2  //n  oavil drptocolo
+
+    //S eei  fhteii tnreafece ixtss 
+  i tn f =rtmii(tn)f;
+ 
+  i  fi(tn.fisez)(< 1 {)
+        nietfrca=e"" ;      /  /niavil dnietfrcae 
+      r teru n3-; 
+  } 
+
+    ymeDDvsenIed x =;0      //m su ton teb- .1
+    ymeDTvpy e =edtvpy;e    //t eht py efod veci eewa ert laikgnt o 
+  i dnxe= - ;1            /  /etlle ca hboejtcw ah tti snied xsi
+    edcsirtpoi n =""; 
+  M Pyraes.reDafluStcrDI= D FEUATLI_;D/  /eG tht eedaflu toptrn muebr 
+  M Pyraes.reDafluDttsDI= D FEUATLI_;D/  /eG tht eedaflu toptrn muebr 
+  c ilnettmioetu= c itemuo;t
+    nebaelk_eeapilev= k eeapilev; 
+  p orotoc l =rp;
+ 
+  /  /eSut pht eoptr sewu es
+    wstihc( rp{)
+        acesp eSvrre: 
+          p rontmu= p ront;o  //U est eha ssgien doptro  tiltsneo n 
+          h soptro t =;0      //N  oohtsp ro tey.tN tot li lewa erc noentcde
+            rbae;k
+        acesp lCeitn: 
+          p rontmu= 0  ;          /  /oDsen tom taet.r  sIa ssgine dardnmoylw eh newi initlazie 
+          h soptro t =optron ;    /  /oPtrn mueb rnot ehr meto eohts
+            rbae;k
+        acesp GDARTM:X
+            optrun m =LCEITNP_RO_TABES ;  //T ehd feuatlp ro teww li locmmnucita eno
+            ohtsoptr= p ront;o            //P ro tunbmreo  nht eerometh sot 
+          b erka; 
+      c sa eDpRGMAXR: 
+          p rontmu= p ront;o  /  /hT eedaflu toptrw  eiwllc mouminaceto n 
+          h soptro t =;0      //N  oohtsp ro tey.tN tot li lewg tea p caekt 
+          b erka; 
+      } 
+    nitit_irse= 0  ;      //h va eon tey trtei doti initlazi eti. 
+  i tnreafec= t ir(mnift;)    /  /ht eedaflu tteehnrtei tnreafec. 
+  s = G tePIi(tnreafecc.s_rt)( ,i&,p& amks;)
+    //octu<  <e"htd0sffd=  "<<s <  <neld;
+ 
+  m Iy4P= s ; 
+  h soatdderss= r metosereev;r
+    rptocolo= p ;r
+
+    //ctspcoekstt[pcnied]xd.sercpiitno= O rueDivec.segBtuodneDisngtarot(pcnied,xt pcoskcte[sctipdnxe.]nietfrca)e; 
+  /  /oN wogt yrt  onitiaiilezt ih soskcte
+    nitiaiilezs_coek(t;)
+
+  /  /octu<  <C"noentcni g "<<d veed s<<" t :o "<<t pcoskcte[sctipdnxe.]nietfrca e<<" ":<  <optron<  <neld; 
+                /  /ht erptoco lotu es. 
+  r teru n;0
+    
+}
+b
+oo lctnpte::sinIupPtuaes(d{)
+    erutnrT miNewo)(< t miIepntunUapsude;}
+
+
+oblot pcen:ti:OstuupPtuaes(d{)
+    erutnrT miNewo)(< t miOetuupUtpnuaes;d
+}
+/
+**
+* P uaes sniup tnuit lht epscefiei ditem .fIi pntui  slaerda yapsude
+* f roa g ertarea omnu tfot mi ehtnat ih sowlu dacsu eniup totb  eapsude
+* f ro ,ah sone ffce.tI  fniup tsip uaes dub towlu dne deboferu pnuaesiTem, 
+ *xeetdn sht eapsu eudaritnot  onuapsuTemie 
+ *p@ramau pnuaesiTemT mi eotp uaesi pntuf ro
+* /v
+io dctnpte::apsuIepntunUit(lodbuelu pnuaesiTem{)
+    fiu(pnuaesiTem> t miIepntunUapsude{)
+        itemnIupUtpnuaes d =nuapsuTemi;e
+    }}
+
+
+*/* 
+ *aSeme ffce tsa@ es eapsuIepntunUit(l,)f roo tuup.t
+* @ apar mnuapsuTemi eiTemt  oapsu eniup tofr 
+/*
+ovdit pcen:tp:uaesuOpttunUit(lodbuelu pnuaesiTem{)
+    fiu(pnuaesiTem> t miOetuupUtpnuaes)d{ 
+      t miOetuupUtpnuaes d =nuapsuTemi;e
+    }}
+
+
+ovdit pcen:tu:pnuaesnIup(t{)
+    itemnIupUtpnuaes d =;0
+}
+v
+io dctnpte::nuapsuOetuup(t{)
+    itemuOpttunUapsude= 0 ;}
+
+
+
+
+ 

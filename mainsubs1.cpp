@@ -11,13 +11,17 @@
 #include "serialhandler.h"
 #include <stdio.h>
 #include <time.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <sstream>
 #include <vector>
 #include "emailer.h"
 #include "CommandLine.h"
 #include "CommThread.h"
+#ifndef _WIN32
 #include <sys/resource.h>
+#endif
 #include "sync-roles.h"
 #include "PagerTable.h"
 #include "repositories/PagerRepository.h"
@@ -480,17 +484,20 @@ string StatisticsToHTML(void){
 }
 
 
-int GetFileDescrptorLimit(void){
-    int i;
-    rlimit mylimit;
+int GetFileDescrptorLimit(void)
+{
+#ifdef _WIN32
+    // Windows sockets do not use the POSIX RLIMIT_NOFILE mechanism.
+    // Return a practical compatibility value for legacy status reporting.
+    return 2048;
+#else
+    struct rlimit mylimit{};
 
-    if (getrlimit(RLIMIT_NOFILE, &mylimit)==0){
-        i = mylimit.rlim_max;
-        return i;
-    }
+    if (getrlimit(RLIMIT_NOFILE, &mylimit) == 0)
+        return static_cast<int>(mylimit.rlim_max);
 
-    return -1;  // function failed
-
+    return -1;
+#endif
 }
 
 bool ChangeConfigSetting(const string& idxfld, const string&  idxval, const string& fieldname, const string&  newval){

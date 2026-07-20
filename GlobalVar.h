@@ -9,7 +9,11 @@
 #define	_GLOBALVAR_H
 
 #include <string>
-#include "strings.h"
+#ifdef _WIN32
+#include <string.h>
+#else
+#include <strings.h>
+#endif
 #include "health.h"
 #include <queue>
 #include <vector>
@@ -25,7 +29,7 @@
 #include "coutput.h"
 #include "cypher.h"
 #include "Security.h"
-
+#include "platform/thread/PlatformMutex.h"
 // Communication queue structures
 
 #define iUNKNOWN_IO        0   // unknow interface type
@@ -116,13 +120,13 @@ extern string webpassword;
 extern int consoleport;
 
 // Our object locks
-extern pthread_mutex_t qlock;       // Lock the queus when we write or pop them.
-extern pthread_mutex_t devlock;     // Lock for the device array accexss
-extern pthread_mutex_t ttylock;     // Lock for the device array accexss
-extern pthread_mutex_t socklock;    // Lock for the tcp/ip socket opening/manipulating
-extern pthread_mutex_t addlistlock; // Lock for the tcp/ip socket opening/manipulating
-extern pthread_mutex_t cmdqlock;    // Lock for the tcp/ip socket opening/manipulating
-extern pthread_mutex_t dlyvlock;    // Lock for the delay vector structure that records delay in the router
+extern cigorn::PlatformMutex qlock;
+extern cigorn::PlatformMutex devlock;
+extern cigorn::PlatformMutex ttylock;
+extern cigorn::PlatformMutex socklock;
+extern cigorn::PlatformMutex addlistlock;
+extern cigorn::PlatformMutex cmdqlock;
+extern cigorn::PlatformMutex dlyvlock;
 extern int maxQcount;               // Maximum number of entries we allow in the queue
 extern int maxQage;                 // Maximum age of messages in the queue, in seconds
 

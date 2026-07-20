@@ -1,63 +1,50 @@
-/* 
+/*
  * File:   EventTimer.cpp
- * Author: john
- * 
- * Created on June 3, 2011, 3:22 AM
+ * Author: Ryan Le
+ * Date: July 16, 2026
+ *
+ * Cross-platform implementation using std::chrono
  */
 
 #include "EventTimer.h"
 
-#include <string>
-#include <sstream>
-#include "functions.h"
-#include "ascii.h"
-#include "stdio.h"
+#include <chrono>
 
-EventTimer::EventTimer() {
-    // Return the number of seconds with 4 digits of precision.
-    struct timeval now;
+namespace
+{
+double CurrentTimeSeconds()
+{
+    const auto now =
+        std::chrono::steady_clock::now().time_since_epoch();
 
-    gettimeofday(&now, NULL);
-    starttime = now.tv_usec;             // number of uSeconds
-    starttime = starttime / 1000000 + now.tv_sec;
-
-    gettimeofday(&now, NULL);
-    nowtime = now.tv_usec;             // number of uSeconds
-    nowtime = nowtime / 1000000 + now.tv_sec;
+    return std::chrono::duration<double>(now).count();
+}
 }
 
-
-EventTimer::EventTimer(const EventTimer& orig) {
+EventTimer::EventTimer()
+{
+    starttime = CurrentTimeSeconds();
+    nowtime = starttime;
 }
 
-EventTimer::~EventTimer() {
+EventTimer::EventTimer(const EventTimer& orig)
+{
+    starttime = orig.starttime;
+    nowtime = orig.nowtime;
 }
 
-void EventTimer::start( void)  {
-    // Return the number of seconds with 4 digits of precision.
-    struct timeval now;
-
-    gettimeofday(&now, NULL);
-    starttime = now.tv_usec;             // number of uSeconds
-    starttime = starttime / 1000000 + now.tv_sec;
-
-    gettimeofday(&now, NULL);
-    nowtime = now.tv_usec;             // number of uSeconds
-    nowtime = nowtime / 1000000 + now.tv_sec;
-
-}
-double EventTimer::timeinterval( void)  {
-    // Return the number of seconds with 4 digits of precision.
-    struct timeval now;
-
-    gettimeofday(&now, NULL);
-    nowtime = now.tv_usec;             // number of uSeconds
-    nowtime = nowtime / 1000000 + now.tv_sec;
-
-    return (nowtime - starttime);
-
+EventTimer::~EventTimer()
+{
 }
 
+void EventTimer::start()
+{
+    starttime = CurrentTimeSeconds();
+    nowtime = starttime;
+}
 
-
-
+double EventTimer::timeinterval()
+{
+    nowtime = CurrentTimeSeconds();
+    return nowtime - starttime;
+}

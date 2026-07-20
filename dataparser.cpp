@@ -1,3 +1,4 @@
+#include "platform/PlatformConstants.h"
 /* 
  * File:   dataparser.cpp
  * Author: john
@@ -8,7 +9,9 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <string>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include "Cigorn.h"     // Our application-specific constants and headers
 #include "TCPsocket.h"
 #include "CommThread.h"
@@ -309,11 +312,11 @@ int dataparser::parseTAP(){
                                     memcpy(NewEntry.data, messageString.c_str(), messageString.length());
                                     NewEntry.bcount = messageString.length();
 
-                                    pthread_mutex_lock(&qlock);
+                                    qlock.lock();
                                     try{
                                         qMSGin.push(NewEntry);
                                     }catch (exception& e){}
-                                    pthread_mutex_unlock(&qlock);
+                                    qlock.unlock();
                                 }else{
                                     // Pager not in database
                                     // Respond with <CR><NAK><CR>
@@ -397,7 +400,7 @@ int dataparser::look4WMX(){
             NewEntry.PortIn = ParsingPort;
             wmxcount_in++;
             //NMEAinput.device = devindex;    // The device index into the devices structure array.
-            pthread_mutex_lock(&qlock);
+            qlock.lock();
             try
               {
                 //cout << "New WMX: " << NewEntry.srcID << endl;
@@ -409,7 +412,7 @@ int dataparser::look4WMX(){
                 //ss << "Error 846: " << e.what();
                 elog.store(ss.str());
               }
-            pthread_mutex_unlock(&qlock);
+            qlock.unlock();
             count++;
             rget = eot_pos + 1;
             realignRaw();
@@ -516,7 +519,7 @@ int dataparser::look4XML(){
                     // This XML message is from another CIGORN gateway
                     NewEntry.format = fmtCigorn;
                 }
-                pthread_mutex_lock(&qlock);
+                qlock.lock();
                 try
                   {
                     qMSGin.push(NewEntry);
@@ -527,7 +530,7 @@ int dataparser::look4XML(){
                     ss << "Error 846: " << e.what();
                     elog.store(ss.str());
                   }
-                pthread_mutex_unlock(&qlock);
+                qlock.unlock();
                 count++;
             }
            // Now remove reminents of the old message that we took the data from
@@ -600,7 +603,7 @@ int dataparser::look4NMEA(){
                 //  cout << "NMEA:" << NMEAinput.data << endl;
                 SetFormat(NMEAinput);           // determine the message format and IDs for this input
                 // cout << "NMEA F:" << NMEAinput.srcID << " D" << NMEAinput.dstID << " @:" << NMEAinput.timein << " " << NMEAinput.data << endl;
-                pthread_mutex_lock(&qlock);
+                qlock.lock();
                 try
                   {
                     qMSGin.push(NMEAinput);       // thows exception sometimes
@@ -614,7 +617,7 @@ int dataparser::look4NMEA(){
 
                 debug = qMSGin.front();
                 // cout << qMSGin.size() << "Debug F:" << debug.srcID << " D" << debug.dstID << " @:" << debug.timein << endl;
-                pthread_mutex_unlock(&qlock);
+                qlock.unlock();
                 count++;
             }
            // Now remove reminents of the old message that we took the data from
@@ -653,7 +656,7 @@ int dataparser::look4ASCII(){
     ASCIIinput.bcount = ExtractData(ASCIIinput.data, count);    // take the ASCII data out of the rawdata buffer
     ASCIIinput.SrcDevDesIndex = devindex;                          // The device index into the devices structure array.
     ASCIIinput.PortIn = ParsingPort;
-    pthread_mutex_lock(&qlock);
+    qlock.lock();
     if (ASCIIinput.bcount > 0){
         //   cout << "ASCII #" << ASCIIinput.bcount << "  " << ASCIIinput.data << endl;
         count++;
@@ -669,7 +672,7 @@ int dataparser::look4ASCII(){
           }
 
     }
-   pthread_mutex_unlock(&qlock);
+   qlock.unlock();
    // Now remove reminents of the old message that we took the data from
    rget = 0;  // flush the buffer
    rput = 0;
@@ -993,7 +996,7 @@ int dataparser::sendASCII(int srcDev, int destDev, char* message, int length){
     messageOut.DstDevDesIndex = destDev;                          // The device index into the devices structure array.
     messageOut.PortIn = ParsingPort;
     if (messageOut.bcount > 0){
-        pthread_mutex_lock(&qlock);
+        qlock.lock();
         try
           {
             qMSGin.push(messageOut);       // thows exception sometimes
@@ -1004,9 +1007,10 @@ int dataparser::sendASCII(int srcDev, int destDev, char* message, int length){
             ss << "Error 845: " << e.what();
             elog.store(ss.str());
           }
-        pthread_mutex_unlock(&qlock);
+        qlock.unlock();
         return 1; // 1 message sent
     }else{
         return 0; // 0 messages sent
     }
 }
+

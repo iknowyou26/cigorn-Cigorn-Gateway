@@ -19,7 +19,6 @@
 
 #include "Cigorn.h"     // Our application-specific constants
 #include "CommThread.h"
-#include <hash_map>
 #include "Translator.h"
 
 using namespace std;

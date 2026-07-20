@@ -14,7 +14,7 @@
 #include <queue>
 #include <string>
 #include <map>
-#include "/usr/include/postgresql/libpq-fe.h"
+#include <libpq-fe.h>
 
 enum rowstates {Unchanged, Added, Deleted, Modified };  // were not using the detached state
 
@@ -45,4 +45,5 @@ private:
 };
 
 #endif	/* _DATAROW_H */
+
 

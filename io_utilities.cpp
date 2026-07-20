@@ -12,7 +12,11 @@ using namespace std;
 #include <cstdio>
 #include <iostream>
 #include <sys/stat.h>
+#ifdef _WIN32
+#include <direct.h>
+#else
 #include <unistd.h>
+#endif
 
 #include "Cigorn.h"     
 
@@ -20,7 +24,7 @@ using namespace std;
 int isadir( const char* name )
 {
   struct stat s;
-  lstat( name, &s );
+  stat( name, &s );
   return ( s.st_mode & S_IFMT ) == S_IFDIR;
 }
 
@@ -118,7 +122,11 @@ int filesize(char *filename){
 
 string GetMyDirectory(void){
      char cCurrentPath[FILENAME_MAX];
+     #ifdef _WIN32
+     #define GetCurrentDir _getcwd
+#else
      #define GetCurrentDir getcwd
+#endif
 
      if (!GetCurrentDir(cCurrentPath, sizeof(cCurrentPath)))
          return "";

@@ -1,8 +1,8 @@
 /* 
  * File:   ascii.h
- * Author: john
+ * Author: Ryan Le
  *
- * Created on August 17, 2010, 11:44 PM
+ * Created on July 16, 2026, 11:44 PM
  */
 
 #ifndef _ASCII_H
@@ -24,7 +24,7 @@
 #define NL	 10
 #define VT	 11
 #define NP	 12
-#define CR	 13
+#define CIGORN_CR 13
 #define SO	 14
 #define SI	 15
 #define DLE	 16

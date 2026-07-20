@@ -1,9 +1,12 @@
 /* 
  * File:  DeviceList.cpp
- * Author: john
+ * Author: Ryan Le
  * 
- * Created on August 27, 2010, 11:04 PM
+ * Created on July 16, 2026, 11:04 PM
  */
+#include "platform/Platform.h"
+#include "platform/thread/PlatformMutex.h"
+#include "platform/thread/PlatformLockGuard.h"
 #include "GlobalVar.h"
 #include "Cigorn.h"
 #include "functions.h"
@@ -988,13 +991,15 @@ int DeviceList::AddttyDevice(string dts, string intf, string devdes){
 
     if (devicetypes[i] == dNONE){
         // We found an unused device object.  Turn it into a device
-        pthread_mutex_lock(&devlock);
-        devicetypes[i] = dt;
-        interfaces[i] = intf;   // the interface we are going to use.
-        descriptions[i] = "";   // a text description for this device
-        channels[i] = -1;       // we don't use a channel for  this type of device
-        designator[i] = devdes; // The device designator
-        pthread_mutex_unlock(&devlock);
+     {
+    cigorn::PlatformLockGuard lock(devlock);
+
+    devicetypes[i] = dt;
+    interfaces[i] = intf;
+    descriptions[i] = "";
+    channels[i] = -1;
+    designator[i] = devdes;
+}
         return i;            // we successfully added it.
     }
 
@@ -1054,10 +1059,12 @@ int DeviceList::ConnectDeviceSocket(int devindex,  std::string intf, int portno,
         tcpindex = GetNewTCPindex();  // get the next unused TCP socket object
         if ((tcpindex >= 0) && (tcpindex < MAXSOCKETS)){
             // Store the binding info in the device structure
-            pthread_mutex_lock(&devlock);
-            OurDevices.setBinding(devindex, tcpindex);
-            devdes = OurDevices.designator[devindex];  // device designator string
-            pthread_mutex_unlock(&devlock);
+            {
+    cigorn::PlatformLockGuard lock(devlock);
+
+    OurDevices.setBinding(devindex, tcpindex);
+    devdes = OurDevices.designator[devindex];
+}
             tcpsockets[tcpindex].myDevDesIndex = devindex;
             tcpsockets[tcpindex].myDevType = OurDevices.devicetypes[devindex];  // the hardware type we talk to
             tcpsockets[tcpindex].index = tcpindex;     // tell each object what its index is
@@ -1154,13 +1161,15 @@ int DeviceList::AddRadioChannel(std::string devdes, int ch, std::string dts, std
     deviceIndex = i;
     if (devicetypes[deviceIndex] == dNONE){
         // Unused entry, so lets use this one
-        pthread_mutex_lock(&devlock);
-        designator[deviceIndex] = devdes; // The device designator text
-        devicetypes[deviceIndex] = dt;    // Remember the type of device this entry is talking to
-        interfaces[deviceIndex] = intf;   // the interface we are bound to.
-        descriptions[deviceIndex] = "";   // a text description for this device
-        channels[deviceIndex] = ch;       // the radio channel
-        pthread_mutex_unlock(&devlock);
+        {
+    cigorn::PlatformLockGuard lock(devlock);
+
+    designator[deviceIndex] = devdes;
+    devicetypes[deviceIndex] = dt;
+    interfaces[deviceIndex] = intf;
+    descriptions[deviceIndex] = "";
+    channels[deviceIndex] = ch;
+}
         SiteManager.AddRFport(ch, deviceIndex, dt);  // add the rf port to our list of managed RF ports
         return deviceIndex ;              // we successfully added it.
     }

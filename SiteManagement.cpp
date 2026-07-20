@@ -10,7 +10,7 @@
 #include <string.h>   // Required by strcpy()
 #include <stdlib.h>   // Required by malloc()
 #include <stdio.h>
-#include <pthread.h>
+#include "platform/Platform.h"
 #include <ios>
 #include <limits>
 #include <queue>

@@ -50,7 +50,7 @@ int WirelessNAT::AddressTranslate(BinaryEntry& be){
         // Is it within our WNAT range? Check all WNAT entries.
         //cout << "Check WNAT->" << OurDevices.getDevDes(be.DevDesIndex) << " Port:" + intToString(i) << "-> ID:" + intToString(be.dstID) << endl;
 
-        pthread_mutex_lock(&wnatlock);     // Temporarily lock the list
+        wnatlock.lock();     // Temporarily lock the list
 
         for (it = WNATentries.begin(); it != WNATentries.end(); it++ ){
             if ( it->Designator.size() > 0){
@@ -72,12 +72,12 @@ int WirelessNAT::AddressTranslate(BinaryEntry& be){
                 }
             }
         }
-        pthread_mutex_unlock(&wnatlock);     // Unlock the WNAT list
+        wnatlock.unlock();     // Unlock the WNAT list
 
         // Now see if the message came IN on the default WNAT port.
         // If so, we'll set the destination ID to the last ID of an output message as long as the
         //    default devdes is still connected.
-        pthread_mutex_lock(&wnatlock);     // Temporarily lock the list
+        wnatlock.lock();     // Temporarily lock the list
         for (it = WNATentries.begin(); it != WNATentries.end(); it++ ){
             if ( it->DefaultDevDes.size() > 0){
                 // Did it come in the default devicedesignator?
@@ -96,7 +96,7 @@ int WirelessNAT::AddressTranslate(BinaryEntry& be){
                 }
             }
         }
-        pthread_mutex_unlock(&wnatlock);     // Unlock the WNAT list
+        wnatlock.unlock();     // Unlock the WNAT list
 
     }
 
@@ -145,7 +145,7 @@ int WirelessNAT::PortTranslate(BinaryEntry& be, int& Port, int& DefaultPort){
    if (ddPort <= 0)
        return -1;
 
-    pthread_mutex_lock(&wnatlock);     // Temporarily lock the list
+    wnatlock.lock();     // Temporarily lock the list
 
     // Is the source ID within our WNAT range and the destination a device that supports WNAT?
     for (it = WNATentries.begin(); it < WNATentries.end(); it++ ){
@@ -173,7 +173,7 @@ int WirelessNAT::PortTranslate(BinaryEntry& be, int& Port, int& DefaultPort){
             }
         }
     }
-    pthread_mutex_unlock(&wnatlock);     // Temporarily lock the list
+    wnatlock.unlock();     // Temporarily lock the list
    // No WNAT for this entry
     return retval;
 }
@@ -197,7 +197,7 @@ int WirelessNAT::GetID(string DevDes, int Port){
         return -1;
 
     // Is the source ID within our WNAT range and the destination a device that supports WNAT?
-    pthread_mutex_lock(&wnatlock);     // Temporarily lock the list
+    wnatlock.lock();     // Temporarily lock the list
     for (it = WNATentries.begin(); it != WNATentries.end(); it++ ){
 
         if ( it->Designator.size() > 0){
@@ -215,7 +215,7 @@ int WirelessNAT::GetID(string DevDes, int Port){
             }
         }
     }
-    pthread_mutex_unlock(&wnatlock);     // Temporarily lock the list
+    wnatlock.unlock();     // Temporarily lock the list
 
     return retval;
 }
@@ -235,9 +235,9 @@ bool WirelessNAT::GetEntry(int I, WNATEntry& wne){
     }
 
     // Is the source ID within our WNAT range and the destination a device that supports WNAT?
-    pthread_mutex_lock(&wnatlock);     // Temporarily lock the list
+    wnatlock.lock();     // Temporarily lock the list
     wne = WNATentries[I];
-    pthread_mutex_unlock(&wnatlock);     // Temporarily lock the list
+    wnatlock.unlock();     // Temporarily lock the list
     return true;
 }
 
@@ -258,7 +258,7 @@ void WirelessNAT::AddWNAT(string DevDes, int count, int BaseID, string DefaultDe
         comment = "";
 
     // Create a new entry in the WNAT table for this block of IDs
-    pthread_mutex_lock(&wnatlock);     // Temporarily lock the list
+    wnatlock.lock();     // Temporarily lock the list
 
     if  (WNATentries.size() < MaxWNATentries){
         NewWNAT.PortCount = count;
@@ -268,7 +268,7 @@ void WirelessNAT::AddWNAT(string DevDes, int count, int BaseID, string DefaultDe
         NewWNAT.DefaultDevDes =  DefaultDes;
         WNATentries.push_back(NewWNAT);
     }
-    pthread_mutex_unlock(&wnatlock);     // Temporarily lock the list
+    wnatlock.unlock();     // Temporarily lock the list
 
 }
 
@@ -276,23 +276,23 @@ void WirelessNAT::ClearAll(void) {
 
    
     // Create a new entry in the WNAT table for this block of IDs
-    pthread_mutex_lock(&wnatlock);     // Temporarily lock the list
+    wnatlock.lock();     // Temporarily lock the list
     WNATentries.clear();
-    pthread_mutex_unlock(&wnatlock);     // Temporarily lock the list
+    wnatlock.unlock();     // Temporarily lock the list
 
 }
 
 
 int WirelessNAT::StoreHistory(string s) {
 
-    pthread_mutex_lock(&historylock);     // Temporarily lock the list
+    historylock.lock();     // Temporarily lock the list
     history.insert(history.begin(), s);  // store the WNAT event in the history
 
     // Trim the hsitor to a managable size
     while (history.size() > MaxHistory){
         history.erase(history.end());
     }
-    pthread_mutex_unlock(&historylock);     // Temporarily lock the list
+    historylock.unlock();     // Temporarily lock the list
 }
 
 

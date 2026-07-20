@@ -9,7 +9,7 @@
 
 #ifndef WIRELESSNAT_H
 #define	WIRELESSNAT_H
-
+#include "platform/thread/PlatformMutex.h"
 #include <queue>
 #include <vector>
 #include "BinaryEntry.h"
@@ -50,8 +50,8 @@ public:
     vector <WNATEntry>::iterator it;
     vector <string> history;
     vector <string>::iterator wit;
-    pthread_mutex_t  wnatlock;        // Lock for the list of wnat entries
-    pthread_mutex_t  historylock;     // Lock for the list of wnat entries
+    cigorn::PlatformMutex wnatlock;
+    cigorn::PlatformMutex historylock;
 
 private:
 
