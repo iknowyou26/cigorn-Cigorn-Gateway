@@ -1,4 +1,4 @@
-﻿/* 
+/* 
  * File:   WebPages.cpp
  * Author: john
  * 
@@ -207,18 +207,19 @@ string WebPages::Err404page(string f){
 
 
 // Put the standard HTTP header onto the string s
-string WebPages::AddHeader(string s){
-
+string WebPages::AddHeader(string s)
+{
     std::stringstream ss;
 
-    ss << OKresponse << endl;
-    ss << "Date: " << LocalDate() << " " << LocalTime() << endl;
-    ss << "Content-Type: text/html" << endl;
+    ss << "HTTP/1.1 200 OK\r\n";
+    ss << "Date: " << LocalDate() << " " << LocalTime() << "\r\n";
+    ss << "Content-Type: text/html; charset=utf-8\r\n";
+    ss << "Connection: close\r\n";
+    ss << "\r\n";
 
     ss << s;
 
     return ss.str();
-
 }
 
 
@@ -1481,5 +1482,6 @@ string WebPages::Head(int RefreshRate){
     ss << fm.TagClose(tag_head) << endl;
     return ss.str();
 }
+
 
 

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>WCG Test Terminal</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #202124;
+            color: #f1f1f1;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 24px;
+        }
+
+        .connection-panel {
+            display: flex;
+            gap: 10px;
+            align-items: end;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        label {
+            font-size: 13px;
+        }
+
+        input {
+            padding: 8px;
+            border: 1px solid #666;
+            border-radius: 4px;
+            background: #303134;
+            color: white;
+        }
+
+        button {
+            padding: 9px 16px;
+            border: 0;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #connectButton {
+            background: #2e7d32;
+            color: white;
+        }
+
+        #disconnectButton {
+            background: #b71c1c;
+            color: white;
+        }
+
+        #sendButton {
+            background: #1565c0;
+            color: white;
+        }
+
+        #terminalOutput {
+            height: 430px;
+            overflow-y: auto;
+            padding: 12px;
+            border: 1px solid #555;
+            background: black;
+            color: #00ff66;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 15px;
+            white-space: pre-wrap;
+            box-sizing: border-box;
+        }
+
+        .command-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        #commandInput {
+            flex: 1;
+            font-family: Consolas, "Courier New", monospace;
+        }
+
+        .status {
+            margin: 8px 0;
+        }
+
+        #statusText {
+            color: #ffcc00;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Cigorn Gateway Test Terminal</h1>
+
+    <div class="connection-panel">
+        <div class="field">
+            <label for="hostInput">Host</label>
+            <input id="hostInput"
+                   type="text"
+                   value="127.0.0.1">
+        </div>
+
+        <div class="field">
+            <label for="portInput">CLI Port</label>
+            <input id="portInput"
+                   type="number"
+                   value="2300">
+        </div>
+
+        <button id="connectButton" type="button">
+            Connect
+        </button>
+
+        <button id="disconnectButton" type="button">
+            Disconnect
+        </button>
+    </div>
+
+    <div class="status">
+        Status:
+        <strong id="statusText">Disconnected</strong>
+    </div>
+
+    <div id="terminalOutput">WCG Test Terminal
+Ready.
+
+</div>
+
+    <div class="command-row">
+        <input id="commandInput"
+               type="text"
+               placeholder="Enter Cigorn command">
+
+        <button id="sendButton" type="button">
+            Send
+        </button>
+
+        <button id="clearButton" type="button">
+            Clear
+        </button>
+    </div>
+
+    <script>
+        const output = document.getElementById("terminalOutput");
+        const commandInput = document.getElementById("commandInput");
+        const statusText = document.getElementById("statusText");
+
+        const history = [];
+        let historyIndex = 0;
+
+        function appendOutput(text) {
+            output.textContent += text;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function sendCommand() {
+            const command = commandInput.value.trim();
+
+            if (command.length === 0) {
+                return;
+            }
+
+            history.push(command);
+            historyIndex = history.length;
+
+            appendOutput("> " + command + "\n");
+
+            /*
+             * Phase 1 test only.
+             * Later, this will send the command through WebSocket.
+             */
+            appendOutput(
+                "[Terminal bridge not connected yet]\n\n"
+            );
+
+            commandInput.value = "";
+            commandInput.focus();
+        }
+
+        document.getElementById("connectButton")
+            .addEventListener("click", function () {
+                statusText.textContent =
+                    "Terminal bridge not installed";
+                appendOutput(
+                    "Connect requested for 127.0.0.1:2300\n"
+                );
+            });
+
+        document.getElementById("disconnectButton")
+            .addEventListener("click", function () {
+                statusText.textContent = "Disconnected";
+                appendOutput("Disconnected\n");
+            });
+
+        document.getElementById("sendButton")
+            .addEventListener("click", sendCommand);
+
+        document.getElementById("clearButton")
+            .addEventListener("click", function () {
+                output.textContent = "";
+            });
+
+        commandInput.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                sendCommand();
+                return;
+            }
+
+            if (event.key === "ArrowUp") {
+                event.preventDefault();
+
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    commandInput.value = history[historyIndex];
+                }
+            }
+
+            if (event.key === "ArrowDown") {
+                event.preventDefault();
+
+                if (historyIndex < history.length - 1) {
+                    historyIndex++;
+                    commandInput.value = history[historyIndex];
+                } else {
+                    historyIndex = history.length;
+                    commandInput.value = "";
+                }
+            }
+        });
+    </script>
+</body>
+</html>
