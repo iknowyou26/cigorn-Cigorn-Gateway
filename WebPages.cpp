@@ -23,7 +23,8 @@
 #include "procinfo.h"
 #include "SocketThread.h"
 #include "sync-roles.h"
-
+#include <sstream>
+#include <string>
 
 using namespace std;
 
@@ -1484,4 +1485,245 @@ string WebPages::Head(int RefreshRate){
 }
 
 
+std::string WebPages::DashboardPage()
+{
+    std::stringstream ss;
+
+    ss << "<!DOCTYPE html>\r\n";
+    ss << "<html><head><meta charset=\"utf-8\">";
+    ss << "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">";
+    ss << "<title>Cigorn Gateway Dashboard</title>";
+
+    ss << "<style>";
+    ss << "body{margin:0;background:#f3f5f7;font-family:Arial,sans-serif;color:#20252b;}";
+    ss << ".top{background:#1f2933;color:white;padding:18px 24px;display:flex;";
+    ss << "justify-content:space-between;align-items:center;}";
+    ss << ".top h1{margin:0;font-size:25px;}";
+    ss << ".top a{color:white;text-decoration:none;margin-left:18px;}";
+    ss << ".wrap{max-width:1300px;margin:22px auto;padding:0 18px;}";
+    ss << ".status{display:flex;gap:10px;align-items:center;margin-bottom:18px;}";
+    ss << ".dot{width:12px;height:12px;border-radius:50%;background:#28a745;}";
+    ss << ".grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px;}";
+    ss << ".card{background:white;border:1px solid #d9dee3;border-radius:8px;";
+    ss << "box-shadow:0 2px 7px rgba(0,0,0,.07);overflow:hidden;}";
+    ss << ".card h2{font-size:18px;margin:0;padding:13px 16px;background:#edf1f4;";
+    ss << "border-bottom:1px solid #d9dee3;}";
+    ss << ".card pre{margin:0;padding:15px;min-height:175px;max-height:330px;";
+    ss << "overflow:auto;background:#101418;color:#42f56c;font-family:Consolas,monospace;";
+    ss << "white-space:pre-wrap;word-break:break-word;}";
+    ss << ".toolbar{margin:18px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}";
+    ss << "button{padding:9px 16px;cursor:pointer;}";
+    ss << "#refreshStatus{color:#555;}";
+    ss << ".error{color:#ff8080;}";
+    ss << "</style></head><body>";
+
+    ss << "<div class=\"top\">";
+    ss << "<h1>Cigorn Gateway 5.0.1 Dashboard</h1>";
+    ss << "<div><a href=\"/?page=terminal\">CLI Terminal</a>";
+    ss << "<a href=\"/\">Home</a></div>";
+    ss << "</div>";
+
+    ss << "<div class=\"wrap\">";
+    ss << "<div class=\"status\"><span class=\"dot\"></span>";
+    ss << "<strong>WCG web service is running</strong></div>";
+
+    ss << "<div class=\"toolbar\">";
+    ss << "<button type=\"button\" onclick=\"refreshDashboard()\">Refresh Now</button>";
+    ss << "<label><input id=\"autoRefresh\" type=\"checkbox\" checked> Auto-refresh every 5 seconds</label>";
+    ss << "<span id=\"refreshStatus\">Waiting for first refresh...</span>";
+    ss << "</div>";
+
+    ss << "<div class=\"grid\">";
+    ss << "<section class=\"card\"><h2>System Configuration</h2>";
+    ss << "<pre id=\"config\">Loading...</pre></section>";
+
+    ss << "<section class=\"card\"><h2>General Statistics</h2>";
+    ss << "<pre id=\"stats\">Loading...</pre></section>";
+
+    ss << "<section class=\"card\"><h2>Radio Channels</h2>";
+    ss << "<pre id=\"radio\">Loading...</pre></section>";
+
+    ss << "<section class=\"card\"><h2>Connected Sockets</h2>";
+    ss << "<pre id=\"sockets\">Loading...</pre></section>";
+
+    ss << "<section class=\"card\"><h2>Devices</h2>";
+    ss << "<pre id=\"devices\">Loading...</pre></section>";
+
+    ss << "<section class=\"card\"><h2>Software Version</h2>";
+    ss << "<pre id=\"version\">Loading...</pre></section>";
+    ss << "</div></div>";
+
+    ss << "<script>";
+    ss << "let refreshing=false;";
+
+    ss << "function runCli(command,target){";
+    ss << "const element=document.getElementById(target);";
+    ss << "element.classList.remove('error');";
+    ss << "element.textContent='Loading '+command+'...';";
+    ss << "return fetch('/cli',{";
+    ss << "method:'POST',";
+    ss << "headers:{'Content-Type':'application/x-www-form-urlencoded'},";
+    ss << "body:'command='+encodeURIComponent(command)";
+    ss << "})";
+    ss << ".then(function(response){";
+    ss << "if(!response.ok)throw new Error('HTTP '+response.status);";
+    ss << "return response.text();";
+    ss << "})";
+    ss << ".then(function(text){element.textContent=text||'No data returned.';})";
+    ss << ".catch(function(error){";
+    ss << "element.textContent='Dashboard error: '+error;";
+    ss << "element.classList.add('error');";
+    ss << "});";
+    ss << "}";
+
+    ss << "function refreshDashboard(){";
+    ss << "if(refreshing)return;";
+    ss << "refreshing=true;";
+    ss << "document.getElementById('refreshStatus').textContent='Refreshing...';";
+
+    ss << "Promise.all([";
+    ss << "runCli('CONFIG','config'),";
+    ss << "runCli('STATS','stats'),";
+    ss << "runCli('RADIO','radio'),";
+    ss << "runCli('SOCKETS','sockets'),";
+    ss << "runCli('DEVICES','devices'),";
+    ss << "runCli('VER','version')";
+    ss << "]).finally(function(){";
+    ss << "refreshing=false;";
+    ss << "document.getElementById('refreshStatus').textContent=";
+    ss << "'Last updated: '+new Date().toLocaleTimeString();";
+    ss << "});";
+    ss << "}";
+
+    ss << "setInterval(function(){";
+    ss << "if(document.getElementById('autoRefresh').checked)refreshDashboard();";
+    ss << "},5000);";
+
+    ss << "refreshDashboard();";
+    ss << "</script>";
+    ss << "</body></html>\r\n";
+
+    return ss.str();
+}
+std::string WebPages::TerminalPage()
+{
+    std::stringstream ss;
+
+    ss << "<!DOCTYPE html>\r\n";
+    ss << "<html><head><meta charset=\"utf-8\">";
+    ss << "<title>Cigorn CLI Terminal</title>";
+    ss << "<style>";
+    ss << "body{font-family:Arial;margin:20px;background:#f2f2f2;}";
+    ss << ".panel{max-width:1100px;margin:auto;background:white;padding:20px;border:1px solid #bbb;}";
+    ss << "#terminal{width:100%;height:500px;background:#000;color:#00ff00;";
+    ss << "font-family:Consolas,monospace;padding:10px;box-sizing:border-box;resize:vertical;}";
+    ss << ".command-row{display:flex;gap:10px;margin-top:14px;}";
+    ss << "#command{flex:1;font-family:Consolas,monospace;padding:9px;box-sizing:border-box;}";
+    ss << "button{padding:9px 18px;cursor:pointer;}";
+    ss << "button:disabled{cursor:not-allowed;opacity:.55;}";
+    ss << "#status{margin-top:10px;font-size:14px;color:#444;}";
+    ss << ".hint{font-size:13px;color:#555;}";
+    ss << "</style></head><body>";
+
+    ss << "<div class=\"panel\">";
+    ss << "<h2>Cigorn CLI Terminal</h2>";
+    ss << "<p>Connected to the Cigorn command processor.</p>";
+    ss << "<p class=\"hint\">Use Up/Down arrows for command history. Use read-only commands first.</p>";
+
+    ss << "<textarea id=\"terminal\" readonly>";
+    ss << "Cigorn Gateway Web Terminal\r\n";
+    ss << "Try: HELP, VER, STATS, CONFIG, DEVICES, SOCKETS\r\n";
+    ss << "</textarea>";
+
+    ss << "<div class=\"command-row\">";
+    ss << "<input id=\"command\" type=\"text\" ";
+    ss << "placeholder=\"Enter Cigorn command\" autocomplete=\"off\">";
+    ss << "<button id=\"sendButton\" type=\"button\" onclick=\"sendCommand()\">Send</button>";
+    ss << "<button id=\"clearButton\" type=\"button\" onclick=\"clearTerminal()\">Clear</button>";
+    ss << "</div>";
+
+    ss << "<div id=\"status\">Ready</div>";
+    ss << "<p><a href=\"/\">Return to Home</a></p>";
+    ss << "</div>";
+
+    ss << "<script>";
+    ss << "const history=[];";
+    ss << "let historyIndex=0;";
+
+    ss << "function appendTerminal(text){";
+    ss << "const terminal=document.getElementById('terminal');";
+    ss << "terminal.value+=text;";
+    ss << "terminal.scrollTop=terminal.scrollHeight;";
+    ss << "}";
+
+    ss << "function setBusy(isBusy){";
+    ss << "document.getElementById('sendButton').disabled=isBusy;";
+    ss << "document.getElementById('command').disabled=isBusy;";
+    ss << "document.getElementById('status').textContent=isBusy?'Executing command...':'Ready';";
+    ss << "}";
+
+    ss << "function clearTerminal(){";
+    ss << "document.getElementById('terminal').value='Cigorn Gateway Web Terminal\\r\\n';";
+    ss << "document.getElementById('command').focus();";
+    ss << "}";
+
+    ss << "function sendCommand(){";
+    ss << "const commandBox=document.getElementById('command');";
+    ss << "const command=commandBox.value.trim();";
+    ss << "if(command.length===0)return;";
+
+    ss << "if(history.length===0||history[history.length-1]!==command){history.push(command);}";
+    ss << "historyIndex=history.length;";
+
+    ss << "appendTerminal('\\r\\nCigorn> '+command+'\\r\\n');";
+    ss << "commandBox.value='';";
+    ss << "setBusy(true);";
+
+    ss << "fetch('/cli',{";
+    ss << "method:'POST',";
+    ss << "headers:{'Content-Type':'application/x-www-form-urlencoded'},";
+    ss << "body:'command='+encodeURIComponent(command)";
+    ss << "})";
+    ss << ".then(function(response){";
+    ss << "if(!response.ok)throw new Error('HTTP '+response.status);";
+    ss << "return response.text();";
+    ss << "})";
+    ss << ".then(function(text){";
+    ss << "appendTerminal(text);";
+    ss << "if(text.length>0&&!text.endsWith('\\n'))appendTerminal('\\r\\n');";
+    ss << "})";
+    ss << ".catch(function(error){";
+    ss << "appendTerminal('Web CLI error: '+error+'\\r\\n');";
+    ss << "})";
+    ss << ".finally(function(){";
+    ss << "setBusy(false);";
+    ss << "commandBox.focus();";
+    ss << "});";
+    ss << "}";
+
+    ss << "document.getElementById('command').addEventListener('keydown',function(event){";
+    ss << "if(event.key==='Enter'){event.preventDefault();sendCommand();return;}";
+    ss << "if(event.key==='ArrowUp'){";
+    ss << "event.preventDefault();";
+    ss << "if(history.length>0){";
+    ss << "historyIndex=Math.max(0,historyIndex-1);";
+    ss << "this.value=history[historyIndex];";
+    ss << "}";
+    ss << "return;";
+    ss << "}";
+    ss << "if(event.key==='ArrowDown'){";
+    ss << "event.preventDefault();";
+    ss << "if(history.length>0){";
+    ss << "historyIndex=Math.min(history.length,historyIndex+1);";
+    ss << "this.value=(historyIndex<history.length)?history[historyIndex]:'';";
+    ss << "}";
+    ss << "}";
+    ss << "});";
+
+    ss << "document.getElementById('command').focus();";
+    ss << "</script>";
+    ss << "</body></html>\r\n";
+
+    return ss.str();
+}
 

@@ -32,7 +32,8 @@ public:
     WebPages();
     WebPages(const WebPages& orig);
     virtual ~WebPages();
-
+    static std::string TerminalPage();
+    static std::string DashboardPage();
     string HomePage(bool);
     string RadioPage(string);
     string LoginPage(void);

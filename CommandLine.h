@@ -74,6 +74,7 @@ public:
     bool cmdReboot(void);
     bool cmdReload(void);
     bool cmdRadio(void);
+    bool cmdAT(void);
     bool cmdMessage(void);
     bool cmdReset(void);
     bool cmdPause(void);

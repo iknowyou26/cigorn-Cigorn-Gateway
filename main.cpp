@@ -1,4 +1,4 @@
-﻿/*********************************extern int TestDeviceRepository();***********************/
+/*********************************extern int TestDeviceRepository();***********************/
 // RaveonNet.cpp
 //
 //
@@ -120,11 +120,11 @@ string Application = APP_TITLE;
 string AppVersion;
 bool maininitialized = false;
 bool consolethreadcreated = false;
-string dbType = "PostgreSQL";
+string dbType = "SQLServer";
 string dbUser = "postgres";
 string dbPass = "administrator";
 string dbName = "cigorn";
-string dbHost = "localhost";
+string dbHost = "DESKTOP-7CTO60P\\CIGORN";
 time_t boot_time;
 
 // Command line processor and local console user interface
@@ -383,7 +383,12 @@ int main(int argc, char *argv[],char *envp[] )
             << "] password=[" << webpassword << "]" << endl;
 
        // Initialize the connection to the database
-       myDB.connect(dbHost, dbName, dbUser, dbPass);
+	// Initialize the connection to the database
+
+
+
+myDB.connect(dbHost, dbName, dbUser, dbPass);
+       
        Me.DBmodifyflag = (int)time(NULL);                // remmeber we re-read the DB
    
        if (myDB.ConnectionOK){
@@ -465,6 +470,7 @@ int main(int argc, char *argv[],char *envp[] )
 
        // Configure our system
        ReadTable(dtSC);                 // Read the settings from the database table SiteConfig (preferred method)
+       ConfigureWeb(dtSC, &myWeb);
 
        // Telnet Port for remote commands and user command-line-interface
        ss << "Command Line Interface via port " << consoleport << endl;
@@ -679,5 +685,7 @@ int main(int argc, char *argv[],char *envp[] )
 int getMainLoopSpeed(){
     return MainSleeper.getLoopSpeed();
 }
+
+
 
 

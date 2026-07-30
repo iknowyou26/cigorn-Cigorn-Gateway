@@ -1,4 +1,4 @@
-#include "platform/thread/PlatformMutex.h"
+﻿#include "platform/thread/PlatformMutex.h"
 #include "platform/thread/PlatformLockGuard.h"
 
 #include <chrono>
@@ -8,6 +8,15 @@
 #include "platform/Platform.h"
 
 #include <string>
+#include <vector>
+
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <iphlpapi.h>
+#include <windows.h>
+#pragma comment(lib, "iphlpapi.lib")
+#endif
 
 #ifndef _WIN32
 #include <sys/types.h>
@@ -479,15 +488,163 @@ int getIPv4(string intf) {
 }
 #else
 
+static std::string WideToUtf8(const wchar_t* text)
+{
+    if (text == nullptr || text[0] == L'\0')
+        return "";
+
+    int sizeNeeded = WideCharToMultiByte(
+        CP_UTF8,
+        0,
+        text,
+        -1,
+        nullptr,
+        0,
+        nullptr,
+        nullptr
+    );
+
+    if (sizeNeeded <= 0)
+        return "";
+
+    std::vector<char> buffer(
+        static_cast<size_t>(sizeNeeded)
+    );
+
+    if (WideCharToMultiByte(
+            CP_UTF8,
+            0,
+            text,
+            -1,
+            buffer.data(),
+            sizeNeeded,
+            nullptr,
+            nullptr) <= 0)
+    {
+        return "";
+    }
+
+    return std::string(buffer.data());
+}
+
 void GetMyIPaddressList(IPaddList& al)
 {
     al.clear();
 
-    EthernetInterface loopback;
-    loopback.interface = "loopback";
-    loopback.ipaddress = "127.0.0.1";
+    ULONG flags =
+        GAA_FLAG_SKIP_ANYCAST |
+        GAA_FLAG_SKIP_MULTICAST |
+        GAA_FLAG_SKIP_DNS_SERVER;
 
-    al[0] = loopback;
+    ULONG bufferLength = 15000;
+    std::vector<unsigned char> buffer(bufferLength);
+
+    PIP_ADAPTER_ADDRESSES adapters =
+        reinterpret_cast<PIP_ADAPTER_ADDRESSES>(
+            buffer.data()
+        );
+
+    ULONG result = GetAdaptersAddresses(
+        AF_INET,
+        flags,
+        nullptr,
+        adapters,
+        &bufferLength
+    );
+
+    if (result == ERROR_BUFFER_OVERFLOW)
+    {
+        buffer.resize(bufferLength);
+
+        adapters =
+            reinterpret_cast<PIP_ADAPTER_ADDRESSES>(
+                buffer.data()
+            );
+
+        result = GetAdaptersAddresses(
+            AF_INET,
+            flags,
+            nullptr,
+            adapters,
+            &bufferLength
+        );
+    }
+
+    int index = 0;
+
+    if (result == NO_ERROR)
+    {
+        for (PIP_ADAPTER_ADDRESSES adapter = adapters;
+             adapter != nullptr;
+             adapter = adapter->Next)
+        {
+            if (adapter->OperStatus != IfOperStatusUp)
+                continue;
+
+            std::string interfaceName =
+                WideToUtf8(adapter->FriendlyName);
+
+            if (interfaceName.empty())
+                continue;
+
+            for (PIP_ADAPTER_UNICAST_ADDRESS address =
+                     adapter->FirstUnicastAddress;
+                 address != nullptr;
+                 address = address->Next)
+            {
+                if (address->Address.lpSockaddr == nullptr)
+                    continue;
+
+                if (address->Address.lpSockaddr->sa_family != AF_INET)
+                    continue;
+
+                sockaddr_in* ipv4 =
+                    reinterpret_cast<sockaddr_in*>(
+                        address->Address.lpSockaddr
+                    );
+
+                char ipBuffer[INET_ADDRSTRLEN] = {0};
+
+                if (InetNtopA(
+                        AF_INET,
+                        &ipv4->sin_addr,
+                        ipBuffer,
+                        sizeof(ipBuffer)) == nullptr)
+                {
+                    continue;
+                }
+
+                EthernetInterface item;
+                item.interface = interfaceName;
+                item.ipaddress = ipBuffer;
+
+                al[index] = item;
+                index++;
+            }
+        }
+    }
+
+    bool hasLoopback = false;
+
+    for (IPaddList::iterator it = al.begin();
+         it != al.end();
+         ++it)
+    {
+        if (it->second.ipaddress == "127.0.0.1")
+        {
+            hasLoopback = true;
+            break;
+        }
+    }
+
+    if (!hasLoopback)
+    {
+        EthernetInterface loopback;
+        loopback.interface = "loopback";
+        loopback.ipaddress = "127.0.0.1";
+
+        al[index] = loopback;
+    }
 }
 
 int getIPv4(const char* dev, char* ipv4)

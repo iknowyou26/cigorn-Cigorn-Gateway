@@ -686,10 +686,15 @@ bool DeviceList::IsTTY(int i){
     return IsTTY(interfaces[i]);
 }
 
-bool DeviceList::IsTTY(std::string interface){
-    return (StringLeft(interface,3) == "tty" || StringLeft(interface, 6) == "serial");
+bool DeviceList::IsTTY(std::string interface)
+{
+#ifdef _WIN32
+    return StringLeft(interface, 3) == "COM";
+#else
+    return StringLeft(interface, 3) == "tty" ||
+           StringLeft(interface, 6) == "serial";
+#endif
 }
-
 // Get the devicedesignator for the Device with this binding
 std::string DeviceList::getBoundDesignator(int i, string intface){
     if (i < 0) return "Invalid";
@@ -1355,10 +1360,11 @@ bool DeviceList::LoadTtyDevDesTable(TtyDeviceTableAdapter* adapter)
     string devdes;
     string intf;
     string settings;
-    string protocol;
+    string protocol = "";
     int pnum = 0;
-    int baudrate;
-    int dtypeindex;
+    int i = 0;
+    int baudrate = 0;
+    int dtypeindex = -1;
 
     ErrorsLoading = 0;
     LoadCount = 0;
@@ -1382,7 +1388,7 @@ bool DeviceList::LoadTtyDevDesTable(TtyDeviceTableAdapter* adapter)
                     rfp = adapter->GetInt(i, 3);
 
                     if ((dtypeindex == dDataModem) || (dtypeindex == dWMXmodem))
-                        DevIndex = AddRadioChannel(devdes, rfp, dtype, intf, pnum, protocol);
+                        DevIndex = AddRadioChannel(devdes, rfp, dtype, intf, 0, "");
                     else
                         DevIndex = AddConnection(dtype, intf, devdes);
 

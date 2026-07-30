@@ -1,8 +1,8 @@
-/* 
+﻿/* 
  * File:   settings.cpp
- * Author: john
+ * Author: Ryan Le
  * 
- * Created on August 26, 2010, 9:05 PM
+ * Created on July 23, 2026 9:05 PM
  */
 #include <iostream>
 #include <iomanip>
@@ -53,21 +53,29 @@ int readini(std::string filename){
 void ConfigureWeb(datatable* dt, webserver* web){
     string s;
 
-    s = dt->LookupData("webport" ,fld_param1);
-    if (s.size() > 0){
-        web->portnum = StringToInt(s);
-        if (web->portnum <= 0 ){
-             web->portnum  = DEFAULTWEBPORT;
+    // Use a safe default when the database value is unavailable.
+    web->portnum = DEFAULTWEBPORT;
+
+    if (dt != nullptr){
+        s = dt->LookupData("webport", fld_param1);
+
+        if (s.size() > 0){
+            int configuredPort = StringToInt(s);
+
+            if (configuredPort > 0){
+                web->portnum = configuredPort;
+            }
         }
     }
 
+    cout << "ConfigureWeb final port: "
+         << web->portnum
+         << "\r\n";
+
     web->MySocket.protocol = pServer;  // we are a TCP server
     web->MySocket.description = "WEB server";
-    web->MySocket.sockfd = -1;
-    web->mystate = web_startup;
     web->MySecondSocket.protocol = pServer;  // we are a TCP server
     web->MySecondSocket.description = "WEB server";
-    web->MySecondSocket.sockfd = -1;
 }
 
 // Read the configuration information for the email client myEmail
@@ -290,4 +298,5 @@ void ConfigParameter(string thevariable, string s1, string s2, string s3, string
     ss.str("");
 
 }
+
 

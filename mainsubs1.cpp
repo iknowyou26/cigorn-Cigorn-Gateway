@@ -559,9 +559,9 @@ if (activeDb != nullptr)
 
        // The Wireless NAT table. Lists PORT <-> ID translations
        dtWNAT = new datatable(WNATTable , fld_designator);           // Create the table to hold info about our routed protocols
-       dtTDD->AutoAddRows = aDB->AutoAddRows;                        // use the default autoadd setting for this table
+       dtWNAT->AutoAddRows = aDB->AutoAddRows;                        // use the default autoadd setting for this table
        myDB.LoadTable(dtWNAT);                                        // load the table data from the database. Also loads field definitions
-       dtTDD->parentdb = aDB;
+       dtWNAT->parentdb = aDB;
 
        // Pager translation table
        dtPagers = new datatable(PagerDBTable, pagerNumberColumn);

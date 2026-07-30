@@ -176,28 +176,36 @@ bool SocketThreadCreated = false;
         StatInterfaceindex = GetSerialIndex(STAT_INTERFACE);  // get the serial index for the ttyS0 or whatever is the STAT_INTERFACE
 
         //OurDevices.LoadEthDevDesTable(dtEDD);  // read in the eth device designator table
-        IDatabase* ethDb = DatabaseFactory::Create(DatabaseType::PostgreSQL);
+       IDatabase* dal = myDB.GetDAL();
 
-   if (ethDb->Connect(myDB.LastConnInfo))
-   {
-        RepositoryManager repos(ethDb);
-        EthDeviceTableAdapter ethAdapter(&repos.EthDevices());
-        OurDevices.LoadEthDevDesTable(&ethAdapter);
-   }
-        CoutM1(ss) << "Loaded " << OurDevices.LoadCount << " Eth Device Designators. " << OurDevices.ErrorsLoading << " errors. " << endl;
-       
-        IDatabase* ttyDb = DatabaseFactory::Create(DatabaseType::PostgreSQL);
-
-if (ttyDb->Connect(myDB.LastConnInfo))
+if (dal != nullptr)
 {
-    RepositoryManager repos(ttyDb);
+    RepositoryManager repos(dal);
+
+    EthDeviceTableAdapter ethAdapter(&repos.EthDevices());
+    OurDevices.LoadEthDevDesTable(&ethAdapter);
+
+    CoutM1(ss) << "Loaded "
+               << OurDevices.LoadCount
+               << " Eth Device Designators. "
+               << OurDevices.ErrorsLoading
+               << " errors. "
+               << endl;
+
     TtyDeviceTableAdapter ttyAdapter(&repos.TtyDevices());
     OurDevices.LoadTtyDevDesTable(&ttyAdapter);
-	delete ethDb;
-	delete ttyDb;
+
+    CoutM1(ss) << "Loaded "
+               << OurDevices.LoadCount
+               << " Tty Device Designators. "
+               << OurDevices.ErrorsLoading
+               << " errors. "
+               << endl;
 }
-       // OurDevices.LoadTtyDevDesTable(dtTDD);  // read in the tty device designator table
-        CoutM1(ss) << "Loaded " << OurDevices.LoadCount << " Tty Device Designators. " << OurDevices.ErrorsLoading << " errors. " << endl;
+else
+{
+    CoutM1(ss) << "ERROR: Active DAL is null." << endl;
+}
 
         BuildWNATtable();                      // read in the WNAT table
         BuildPagerTable();
@@ -873,13 +881,13 @@ void HandleRS232Comms(void){
 
     // See if there is data comming in the serial port
     for (i=0; i<MAX_TTY; i++){
-        if (COMport[i].ForceReset || (COMport[i].ShouldConnect && COMport[i].handle <= 0)){
+        if (COMport[i].ForceReset || (COMport[i].ShouldConnect && !COMport[i].IsOpen())){
             COMport[i].ForceReset = false;
             COMport[i].ReOpen();
         }
             
         // Try to open all the serial ports to see if they exist on the machine
-        if (COMport[i].handle >= 0 ){
+        if (COMport[i].IsOpen() ){
             // This port is open. See if data is comming in.
             if (COMport[i].GetChars() > 0){
                 // Some data came in
@@ -1538,3 +1546,5 @@ bool ResetSerial(string ResetDevDes){
 int getCommLoopSpeed(){
     return CommSleeper.getLoopSpeed();
 }
+
+

@@ -191,22 +191,23 @@ bool CommandLine::processCommand(string cmd, int device){
                         }else if (commandMap[c].function == "cmdReload" ){
                             retval = cmdReload();  
                         }else if (commandMap[c].function == "cmdRadio" ){
-                            retval = cmdRadio();  
-                        }else if (commandMap[c].function == "cmdMessage" ){
-                            retval = cmdMessage();  
-                        }else if (commandMap[c].function == "cmdExitCLI" ){
-                            retval = cmdExitCLI();  //
-                        }else if (commandMap[c].function == "cmdReset" ){
-                            retval = cmdReset();  //
-                        }else if (commandMap[c].function == "cmdPause" ){
-                            retval = cmdPause();  //
-                        }else if (commandMap[c].function == "cmdUnpause" ){
-                            retval = cmdUnpause();  //
-                        }else if (commandMap[c].function == "cmdQueuereport" ){
-                            retval = cmdQueuereport();  //
-                        }else
-                            retval == false; //
-
+    retval = cmdRadio();
+}else if (commandMap[c].function == "cmdAT" ){
+    retval = cmdAT();
+}else if (commandMap[c].function == "cmdMessage" ){
+    retval = cmdMessage();
+}else if (commandMap[c].function == "cmdExitCLI" ){
+    retval = cmdExitCLI();  //
+}else if (commandMap[c].function == "cmdReset" ){
+    retval = cmdReset();  //
+}else if (commandMap[c].function == "cmdPause" ){
+    retval = cmdPause();  //
+}else if (commandMap[c].function == "cmdUnpause" ){
+    retval = cmdUnpause();  //
+}else if (commandMap[c].function == "cmdQueuereport" ){
+    retval = cmdQueuereport();  //
+}else
+    retval = false;
                         ssout << ResultStr << endl;
                         
                         //retval =  (*commandMap[c].function)();
@@ -1870,3 +1871,137 @@ bool CommandLine::cmdRadio(void){
 }
 
 
+
+
+// -----------------------------------------------------------------------------
+// Send an AT command to a configured radio.
+// Beta stub: verifies CLI parsing before serial transport is connected.
+// -----------------------------------------------------------------------------
+bool CommandLine::cmdAT(void)
+{
+    ResultStr = "";
+
+    // Display usage and configured serial radios.
+    if (SX[2].empty() || SX[3].empty())
+    {
+        std::stringstream ss;
+
+        ss << "Usage: AT <radio> <command>\r\n";
+        ss << "Example: AT Radio0 ATI\r\n\r\n";
+        ss << "Available serial radios:\r\n";
+
+        bool foundRadio = false;
+
+        for (int i = 0; i < MAXDEVDES; i++)
+        {
+            if (OurDevices.devicetypes[i] == dDataModem ||
+                OurDevices.devicetypes[i] == dWMXmodem)
+            {
+                if (OurDevices.IsTTY(i))
+                {
+                    const int binding = OurDevices.getBinding(i);
+
+                    ss << "  "
+                       << OurDevices.designator[i]
+                       << "  "
+                       << OurDevices.interfaces[i];
+
+                    if (binding >= 0 && binding < MAX_TTY)
+                    {
+                        ss << "  baud:"
+                           << COMport[binding].baudrate;
+                    }
+
+                    ss << "\r\n";
+                    foundRadio = true;
+                }
+            }
+        }
+
+        if (!foundRadio)
+        {
+            ss << "  No configured serial radios found.\r\n";
+        }
+
+        ResultStr = ss.str();
+        return false;
+    }
+
+    const std::string requestedRadio =
+        StringToUpper(trim(SX[2]));
+
+    int deviceIndex = -1;
+
+    // Perform a case-insensitive designator lookup.
+    for (int i = 0; i < MAXDEVDES; i++)
+    {
+        if (StringToUpper(trim(OurDevices.designator[i])) ==
+            requestedRadio)
+        {
+            deviceIndex = i;
+            break;
+        }
+    }
+
+    if (deviceIndex < 0)
+    {
+        ResultStr =
+            "ERROR: Unknown radio designator: " +
+            SX[2] + "\r\n"
+            "Run AT without parameters to list available radios.\r\n";
+
+        return false;
+    }
+
+    if (!OurDevices.IsTTY(deviceIndex))
+    {
+        ResultStr =
+            "ERROR: Device " +
+            OurDevices.designator[deviceIndex] +
+            " is not assigned to a serial interface.\r\n";
+
+        return false;
+    }
+
+    const int portIndex =
+        OurDevices.getBinding(deviceIndex);
+
+    if (portIndex < 0 || portIndex >= MAX_TTY)
+    {
+        ResultStr =
+            "ERROR: Device " +
+            OurDevices.designator[deviceIndex] +
+            " has no active serial-port binding.\r\n";
+
+        return false;
+    }
+
+    const std::string commandText =
+        SX[3] + "\r";
+
+    const int bytesSent =
+        COMport[portIndex].SendString(commandText);
+
+    if (bytesSent < 0)
+    {
+        ResultStr =
+            "ERROR: Serial transmission failed for " +
+            OurDevices.designator[deviceIndex] +
+            ".\r\n";
+
+        return false;
+    }
+
+    ResultStr =
+        "AT command sent.\r\n"
+        "Target Radio : " +
+            OurDevices.designator[deviceIndex] + "\r\n"
+        "Interface    : " +
+            COMport[portIndex].devicename + "\r\n"
+        "Command      : " +
+            SX[3] + "\r\n"
+        "Bytes Sent   : " +
+            intToString(bytesSent) + "\r\n";
+
+    return true;
+}

@@ -478,8 +478,32 @@ int rs232::queuedBytes()
 
 int rs232::SendString(std::string value)
 {
-    if (!IsHandleValid(handle)) {
+    if (devicename.empty())
+    {
         return -1;
+    }
+    if (!IsHandleValid(handle))
+    {
+        std::cout
+            << "SendString(): invalid handle for "
+            << devicename
+            << ". Attempting ReOpen()."
+            << std::endl;
+
+        if (!ReOpen() || !IsHandleValid(handle))
+        {
+            std::cout
+                << "SendString(): ReOpen failed for "
+                << devicename
+                << std::endl;
+
+            return -1;
+        }
+
+        std::cout
+            << "SendString(): ReOpen succeeded for "
+            << devicename
+            << std::endl;
     }
 
     for (char& character : value) {
@@ -500,7 +524,17 @@ int rs232::SendString(std::string value)
             value.data(),
             static_cast<DWORD>(value.size()),
             &bytesWritten,
-            nullptr)) {
+            nullptr))
+    {
+        const DWORD errorCode = GetLastError();
+
+        std::cout
+            << "SendString() WriteFile failed on "
+            << devicename
+            << ". Win32 error="
+            << errorCode
+            << std::endl;
+
         ForceReset = true;
         return -1;
     }
@@ -538,8 +572,19 @@ int rs232::SendBytes(char* bytes, int count)
                 bytes + totalWritten,
                 static_cast<DWORD>(count) - totalWritten,
                 &writtenThisPass,
-                nullptr)) {
+                nullptr))
+        {
+            const DWORD errorCode = GetLastError();
+
+            std::cout
+                << "SendBytes() WriteFile failed on "
+                << devicename
+                << ". Win32 error="
+                << errorCode
+                << std::endl;
+
             ForceReset = true;
+
             return totalWritten > 0
                 ? static_cast<int>(totalWritten)
                 : -1;
@@ -620,6 +665,12 @@ int rs232::GetChars()
             break;
         }
 
+        cout << "SERIAL RX: "
+             << devicename
+             << " bytesRead=" << bytesRead
+             << " totalBefore=" << bytesReadTotal
+             << endl;
+
         bytesReadTotal += static_cast<int>(bytesRead);
         bytes_in += static_cast<long>(bytesRead);
         time_last_msg = time(nullptr);
@@ -698,4 +749,11 @@ void rs232::unpauseOutput()
     timeOutputUnpaused = 0;
 }
 
+
+bool rs232::IsOpen() const
+{
+    return IsHandleValid(handle);
+}
 } // namespace Communications
+
+

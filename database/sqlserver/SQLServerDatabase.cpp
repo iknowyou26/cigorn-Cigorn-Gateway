@@ -1,5 +1,5 @@
 #include "SQLServerDatabase.h"
-
+#include <iostream>
 SQLServerDatabase::SQLServerDatabase()
     : env(SQL_NULL_HENV),
       dbc(SQL_NULL_HDBC)
@@ -27,7 +27,7 @@ bool SQLServerDatabase::Connect(const std::string& connInfo)
         lastError = "Failed to allocate ODBC environment handle";
         return false;
     }
-
+	
     ret = SQLSetEnvAttr(
         env,
         SQL_ATTR_ODBC_VERSION,
@@ -112,13 +112,15 @@ bool SQLServerDatabase::Execute(const std::string& sql)
         &stmt
     );
 
-    if (!SQL_SUCCEEDED(ret))
-    {
-        lastError = "Failed to allocate ODBC statement handle";
-        return false;
-    }
+if (!SQL_SUCCEEDED(ret))
+{
+    lastError = "Failed to allocate ODBC statement handle";
+    return false;
+}
 
-    ret = SQLExecDirect(
+std::cout << "\nSQL Query:\n" << sql << std::endl;
+
+ret = SQLExecDirect(
         stmt,
         reinterpret_cast<SQLCHAR*>(
             const_cast<char*>(sql.c_str())
@@ -145,12 +147,14 @@ bool SQLServerDatabase::Execute(const std::string& sql)
         );
 
         lastError =
-            "SQL Server Execute failed. SQLSTATE=" +
-            std::string(reinterpret_cast<char*>(state)) +
-            " NativeError=" +
-            std::to_string(nativeError) +
-            " Message=" +
-            std::string(reinterpret_cast<char*>(message));
+    "SQL Server Execute failed.\n"
+    "SQL=" + sql +
+    "\nSQLSTATE=" +
+    std::string(reinterpret_cast<char*>(state)) +
+    " NativeError=" +
+    std::to_string(nativeError) +
+    " Message=" +
+    std::string(reinterpret_cast<char*>(message));
 
         SQLFreeHandle(SQL_HANDLE_STMT, stmt);
         return false;
@@ -344,3 +348,4 @@ std::string SQLServerDatabase::LastError() const
 {
     return lastError;
 }
+

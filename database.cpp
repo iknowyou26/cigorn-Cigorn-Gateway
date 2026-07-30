@@ -1,4 +1,4 @@
-/* // void PQfinish(PGconn *conn);
+﻿/* // void PQfinish(PGconn *conn);
  * File:   database.cpp
  * Author: john
  * 
@@ -81,7 +81,12 @@ bool database::connect(
 
         return false;
     }
-
+    
+    cout << "====================================" << endl;
+cout << "Database Type : " << dbType << endl;
+cout << "Database Host : " << dbhost << endl;
+cout << "Database Name : " << dbName << endl;
+cout << "====================================" << endl;
     if (dbType == "SQLServer")
     {
         ConnInfo =
@@ -91,17 +96,8 @@ bool database::connect(
             "Encrypt=yes;"
             "TrustServerCertificate=yes;";
 
-        if (dbuser.empty())
-        {
-            ConnInfo +=
-                "Trusted_Connection=yes;";
-        }
-        else
-        {
-            ConnInfo +=
-                "UID=" + dbuser + ";"
-                "PWD=" + dbpass + ";";
-        }
+        ConnInfo +=
+            "Trusted_Connection=yes;";
     }
     else
     {
@@ -119,6 +115,8 @@ bool database::connect(
  
   /* Check to see that the backend connection was
      successfully made */
+  cout << "Database Type : " << dbType << endl;
+cout << "Connection    : " << ConnInfo << endl;
   if (!dbManager.Connect(ConnInfo)) {
     cout << "Failed to create connection to Database." << dbManager.Database()->LastError() << "\r\n";
       cout << "Connection string:" << ConnInfo << "\r\n";
@@ -127,7 +125,7 @@ bool database::connect(
   }
   else{
      // read the data type indexes
-     if (GetTypes()>= 0){
+     if (dbType == "SQLServer" || GetTypes() >= 0){
         cout << "Connection to database " << dbName << " OK. User=" << dbUser << "\r\n";
         ConnectionOK = true;
      }
@@ -152,7 +150,7 @@ int database::GetTypes(void)
 
     query = "select OID, typname from pg_type;";
 
-    IDatabase* dal = DatabaseFactory::Create(DatabaseType::PostgreSQL);
+    IDatabase* dal = GetDAL();
     if (!dal->Connect(LastConnInfo))
 {
     cout << "DAL connect failed. " << dal->LastError() << "\r\n";
@@ -204,12 +202,12 @@ int database::LoadTable(datatable* dt){
  
   // Fetch all rows from the data table
   //PostgresDatabase dal;
-    IDatabase* dal = DatabaseFactory::Create(DatabaseType::PostgreSQL);
+   IDatabase* dal = GetDAL();
 if (!dal->Connect(LastConnInfo))
 {
     cout << "DAL connect failed loading table: " << tablename << "\r\n";
     cout << dal->LastError() << "\r\n";
-	delete dal;
+	
     return -1;
 	
 }
@@ -232,13 +230,19 @@ if (!dal->Query(query, result))
     if (nFields <= 0){
       
       return -1;  // no columns
-	delete dal;    
+	  
 }
 
     // Build up the list of field/column names
     for (i = 0; i < nFields; i++){
        dt->colname[i] = result.ColumnName(i);
-       dt->type[i] = result.ColumnType(i);
+       int rawType = result.ColumnType(i);
+       dt->type[i] = NormalizeColumnType(rawType);
+
+       cout << "Column " << dt->colname[i]
+            << " raw type " << rawType
+            << " normalized to " << dt->type[i]
+            << endl;
        if (IsValidType(dt->type[i]) == false)
           elog.store("Error with table " + tablename + ". Undefined column type:" + intToString(dt->type[i]) + " Col=" + "(" + dt->colname[i] + ")");
 
@@ -308,7 +312,7 @@ if (!dal->Query(query, result))
 int database::PushUpdatesToDB(datatable* dt){
   
   #define MAXCOL 20
-  IDatabase* dal = DatabaseFactory::Create(DatabaseType::PostgreSQL);
+  IDatabase* dal = GetDAL();
 
 if (!dal->Connect(LastConnInfo))
 {
@@ -459,7 +463,7 @@ else
          ss.str("");                   // clear the buffer
    }
    return rowsupdated;
-	delete dal;
+	
 }
 
 
@@ -468,7 +472,7 @@ else
 int database::StoreTableToDB(datatable* dt){
 
   #define MAXCOL 20
-  IDatabase* dal = DatabaseFactory::Create(DatabaseType::PostgreSQL);       // results of a query
+  IDatabase* dal = GetDAL();    // results of a query
   string query = "";
   string values = "";
   int rowsupdated = 0;
@@ -489,7 +493,7 @@ int database::StoreTableToDB(datatable* dt){
 {
    CoutM2(sss) << "Error deleting table data. " << dal->LastError() << endl;
    return -1;
-	delete dal;
+	
 }
 
 MyCLI.Display(&sss);  // Clear result
@@ -531,7 +535,7 @@ MyCLI.Display(&sss);  // Clear result
    }
 
     return rowsupdated;
-	delete dal;
+
 
 }
 
@@ -541,7 +545,7 @@ MyCLI.Display(&sss);  // Clear result
 int database::PushChangesToDB(datatable* dt){
 
   #define MAXCOL 20
-IDatabase* dal = DatabaseFactory::Create(DatabaseType::PostgreSQL);
+IDatabase* dal = GetDAL();
 string query = "";
 string values = "";
 int rowsupdated = 0;
@@ -553,7 +557,7 @@ if (!dal->Connect(LastConnInfo))
 {
     CoutM2(ss) << "DAL connect failed in PushChangesToDB. " << dal->LastError() << endl;
     return -1;
-	delete dal;
+	
 }
 
 
@@ -589,7 +593,7 @@ if (!dal->Connect(LastConnInfo))
 else
 {
    CoutM2(ss) << "Added new WD: " << query << endl;
-	delete dal;
+	
 }  // Clear result
           }
       }
@@ -646,7 +650,7 @@ else
          ss.str("");                   // clear the buffer
    }
    return rowsupdated;
-	delete dal;
+	
 
 }
 
@@ -660,7 +664,7 @@ int database::GetIndexList(datatable* dt, IntMap& mp){
   // Will hold the number of field in employee table
   int i;
   DBResult result;
-  IDatabase* dal = DatabaseFactory::Create(DatabaseType::PostgreSQL);        // results of a query
+  IDatabase* dal = GetDAL();       // results of a query
   string query;
   int indexval;
   int nrows ;   // number of rows returned
@@ -701,7 +705,7 @@ int database::GetIndexList(datatable* dt, IntMap& mp){
       
         return -1;  // no rows in this table
     
-	delete dal;
+	
     }
 
 	
@@ -895,6 +899,55 @@ string database::FormatForSQL(string s, int tp){
 }
 
 // Return true of the type code is a valid column type we support in this software
+
+// Convert database-specific column types into the internal
+// PostgreSQL-style type identifiers already used by Cigorn.
+int database::NormalizeColumnType(int t)
+{
+
+    switch (t)
+    {
+        // Character and Unicode string types
+        case 1:     // SQL_CHAR
+        case 12:    // SQL_VARCHAR
+        case -1:    // SQL_LONGVARCHAR
+        case -8:    // SQL_WCHAR
+        case -9:    // SQL_WVARCHAR / NVARCHAR
+        case -10:   // SQL_WLONGVARCHAR
+        case -11:   // SQL_GUID
+            return TEXTOID;
+
+        // Integer types
+        case -6:    // SQL_TINYINT
+        case 5:     // SQL_SMALLINT
+        case 4:     // SQL_INTEGER
+            return INT4OID;
+
+        case -5:    // SQL_BIGINT
+            return INT8OID;
+
+        // Boolean
+        case -7:    // SQL_BIT
+            return BOOLOID;
+
+        // Date and time types
+        case 91:    // SQL_TYPE_DATE
+        case 92:    // SQL_TYPE_TIME
+        case 93:    // SQL_TYPE_TIMESTAMP
+        case -154:  // SQL Server TIME2
+        case -155:  // SQL Server DATETIMEOFFSET
+            return TIMESTAMPOID;
+
+        // Binary types
+        case -2:    // SQL_BINARY
+        case -3:    // SQL_VARBINARY
+        case -4:    // SQL_LONGVARBINARY
+            return BYTEAOID;
+
+        default:
+            return t;
+    }
+}
 bool database::IsValidType(int t){
 
     if ((TypeDesription(t) == "") || ( TypeDesription(t) == ColTypeUnknown))
@@ -1015,3 +1068,7 @@ bool database::ValidateType(int dtype, string s){
     return retval;
 
 }
+
+
+
+

@@ -1,4 +1,4 @@
-#include "TtyDeviceRepository.h"
+﻿#include "TtyDeviceRepository.h"
 
 TtyDeviceRepository::TtyDeviceRepository(IDatabase* database)
 {
@@ -7,5 +7,6 @@ TtyDeviceRepository::TtyDeviceRepository(IDatabase* database)
 
 bool TtyDeviceRepository::LoadAll(DBResult& result)
 {
-    return db->Query("SELECT * FROM ttydevdes;", result);
+    return db->Query("SELECT designator, device, interface, channel, settings, baudrate, comments FROM ttydevdes;", result);
 }
+

@@ -1,4 +1,4 @@
-/* 
+﻿/* 
  * File:   database.h
  * Author: john
  *
@@ -22,10 +22,10 @@ using namespace std;
 #define MAXROWCOUNT    1000000   // For postgre lets arbitrarily limit it here.
 /*
 Added	The DataRow object has been added to the DataRowCollection object, but DataRow::AcceptChanges has not been called.
-Deleted	The DataRow object—belonging to a DataRowCollection—has been deleted using the DataRow::Delete method.
+Deleted	The DataRow objectâ€”belonging to a DataRowCollectionâ€”has been deleted using the DataRow::Delete method.
 Detached	Either the DataRow object has not been added to the collection or it has been removed via either the DataRowCollection::Remove or DataRowCollection::RemoveAt method.
-Modified	The DataRow object—belonging to a DataRowCollection—has been edited, but DataRow::AcceptChanges has not been called.
-Unchanged	The DataRow object—belonging to a DataRowCollection—has not changed since the last time DataRow::AcceptChanges was called.
+Modified	The DataRow objectâ€”belonging to a DataRowCollectionâ€”has been edited, but DataRow::AcceptChanges has not been called.
+Unchanged	The DataRow objectâ€”belonging to a DataRowCollectionâ€”has not changed since the last time DataRow::AcceptChanges was called.
 */
 
 
@@ -55,6 +55,7 @@ public:
     database(const database& orig);
     virtual ~database();
     bool connect(string, string, string, string);
+    bool SelectDatabase(const std::string& databaseType);
     bool close(void);
     IDatabase* GetDAL();
     int ExecuteQuery(string);
@@ -67,6 +68,7 @@ public:
     string FormatForSQL(string ,int);
     int GetTypes(void);
     string TypeDesription(int );
+    int NormalizeColumnType(int);
     int GetIndexList(datatable* , IntMap&);
     string OurDefaults(int);
     bool IsValidType(int );
@@ -138,4 +140,5 @@ private:
 #define ColTypeUnknown          "UNKNOWN"
 
 #endif	/* _DATABASE_H */
+
 

@@ -14,7 +14,6 @@
 #include <queue>
 #include <string>
 #include <map>
-#include <libpq-fe.h>
 
 enum rowstates {Unchanged, Added, Deleted, Modified };  // were not using the detached state
 

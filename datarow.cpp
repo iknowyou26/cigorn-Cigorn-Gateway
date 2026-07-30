@@ -12,7 +12,6 @@
 #include <queue>
 #include <string>
 #include <map>
-#include <libpq-fe.h>
 #include "functions.h"
 
 using namespace std;

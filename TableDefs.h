@@ -1,4 +1,4 @@
-/* 
+﻿/* 
  * File:   TableDefs.h
  * Author: john
  *
@@ -108,7 +108,7 @@ using namespace std;
 #define fld_wnat_defaultdes   "defaultdes"
 
 #define PagerDBTable          "pagers"
-#define pagerNumberColumn     "pagerNumber" // Primary key
+#define pagerNumberColumn     "pagernumber" // Primary key
 #define pageDataTypeColumn    "pageDataType"
 #define capCodeColumn         "capCode"
 #define otaProtocolColumn     "otaProtocol"
@@ -116,4 +116,5 @@ using namespace std;
 #define isActiveColumn        "isActive"
 
 #endif	/* _TABLEDEFS_H */
+
 

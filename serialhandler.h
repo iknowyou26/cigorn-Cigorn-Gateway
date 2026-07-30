@@ -62,6 +62,7 @@ namespace Communications {
             
             bool OpenComPort();
             bool ReOpen();
+            bool IsOpen() const;
             bool Configure(int,string);
             int SendString(std::string);
             int SendBytes(char*, int);

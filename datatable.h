@@ -14,7 +14,6 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <libpq-fe.h>
 #include "datarow.h"
 #include "database.h"
 

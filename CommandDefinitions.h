@@ -45,7 +45,8 @@ rncommand ourCommands[] = {
     {28,"RESET", "Re-initialize a connection. ","cmdReset",              true ,  true,   true},
     {29,"PAUSE", "Pause the input or output of a connection.","cmdPause",true ,   xxx,   true},
     {30,"UNPAUSE", "Unpause the input or output of a connection.","cmdUnpause",true ,   xxx,   true},
-    {31,"QUEUEREPORT", "Get queue report for a connection","cmdQueuereport",true ,   xxx,   true}
+    {31,"QUEUEREPORT", "Get queue report for a connection","cmdQueuereport",true ,   xxx,   true},
+    {32,"AT", "Send AT command to radio.","cmdAT",true,true,true}
 };
 
 #define TOTAL_INITIAL_COMMANDS (sizeof(ourCommands) / sizeof(rncommand))

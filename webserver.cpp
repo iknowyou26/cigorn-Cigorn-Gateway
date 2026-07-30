@@ -1,4 +1,5 @@
-#include "platform/PlatformConstants.h"
+﻿#include "platform/PlatformConstants.h"
+#include "CommandLine.h"
 /* 
  * File:   webserver.cpp
  * Author: john
@@ -21,6 +22,86 @@
 #include "WebPages.h"
 #include "Cigorn.h"
 
+
+
+static string StripAnsi(const string& input)
+{
+    string output;
+
+    for (size_t i = 0; i < input.size(); )
+    {
+        unsigned char c = static_cast<unsigned char>(input[i]);
+
+        // Standard ANSI escape sequence: ESC [
+        if (c == 0x1B &&
+            i + 1 < input.size() &&
+            input[i + 1] == '[')
+        {
+            i += 2;
+
+            while (i < input.size())
+            {
+                unsigned char code =
+                    static_cast<unsigned char>(input[i++]);
+
+                // ANSI control sequence final byte.
+                if (code >= 0x40 && code <= 0x7E)
+                    break;
+            }
+        }
+        // Some Windows/browser paths expose ESC as a replacement character.
+        else if (c == 0xEF &&
+                 i + 3 < input.size() &&
+                 static_cast<unsigned char>(input[i + 1]) == 0xBF &&
+                 static_cast<unsigned char>(input[i + 2]) == 0xBD &&
+                 input[i + 3] == '[')
+        {
+            i += 4;
+
+            while (i < input.size())
+            {
+                unsigned char code =
+                    static_cast<unsigned char>(input[i++]);
+
+                if (code >= 0x40 && code <= 0x7E)
+                    break;
+            }
+        }
+        else
+        {
+            output += input[i++];
+        }
+    }
+
+    return output;
+}
+static string DecodeWebFormValue(const string& input)
+{
+    string output;
+
+    for (size_t i = 0; i < input.size(); i++)
+    {
+        if (input[i] == '+')
+        {
+            output += ' ';
+        }
+        else if (input[i] == '%' && i + 2 < input.size())
+        {
+            string hex = input.substr(i + 1, 2);
+            char decoded =
+                static_cast<char>(strtol(hex.c_str(), nullptr, 16));
+
+            output += decoded;
+            i += 2;
+        }
+        else
+        {
+            output += input[i];
+        }
+    }
+
+    return output;
+}
 webserver::webserver() {
     httpfrom = "";
     webdata = "";
@@ -53,6 +134,24 @@ bool webserver::ProcessWebsite(void){
     int i;
     stringstream ss;
 
+    // Temporary web state diagnostics.
+    static int previousDebugState = -1;
+
+    if (previousDebugState != mystate)
+    {
+        cout << "WEB state changed: "
+             << previousDebugState
+             << " -> "
+             << mystate
+             << " sockfd=" << MySocket.sockfd
+             << " newsockfd=" << MySocket.newsockfd
+             << " rget=" << MySocket.MyParser.rget
+             << " rput=" << MySocket.MyParser.rput
+             << endl;
+
+        previousDebugState = mystate;
+    }
+
     
     // See if the socket is initalized. If it is, run it.
     if (MySocket.sockfd >= 0 ){
@@ -67,13 +166,16 @@ bool webserver::ProcessWebsite(void){
     }
 
     // Check the web server watchdog.
-    if (TimeSinceLastPage > WEB_SERVER_TIMEOUT) {
-        // FAIL??
-        MySocket.DisconnectSocket();  // web server failed/stuck.  Restart it.
-        CoutM2(ss) << "Web server stuck.  Restart." << endl;
-        MyCLI.OutputText(ss.str());   // send the text to the console output
-        TimeSinceLastPage = 0;   // restart the watchdog
-        mystate = web_startup;
+    // Only restart an ACTIVE client session.
+    if (MySocket.newsockfd >= 0 &&
+        TimeSinceLastPage > WEB_SERVER_TIMEOUT)
+    {
+        CoutM2(ss) << "Web client timeout. Closing client only." << endl;
+
+        MySocket.DisconnectClient();
+
+        TimeSinceLastPage = 0;
+        mystate = web_idle;
         return busy;
     }
 
@@ -199,6 +301,17 @@ bool webserver::ProcessWebsite(void){
                             // Create a page with our statistics on it
                             webpage = MyPages.RadioPage(TheHTTP.param2);
                             TimeSinceLastPage = 0;   // restart the watchdog
+
+                        }else if (PageRequested == "terminal"){
+                            // Create the Cigorn web CLI terminal page
+                            webpage = MyPages.TerminalPage();
+                            TimeSinceLastPage = 0;   // restart the watchdog
+
+                        }else if (PageRequested == "dashboard"){
+                            // Create the Cigorn live dashboard page
+                            webpage = MyPages.DashboardPage();
+                            TimeSinceLastPage = 0;   // restart the watchdog
+
                         }else if (PageRequested == "wnat"){
                             // Create a page with our statistics on it
                             webpage = MyPages.WnatPage(TheHTTP.param2);
@@ -241,6 +354,40 @@ bool webserver::ProcessWebsite(void){
                             }else{
                                 // invalid login
                             }
+                        }
+                        else if (lastformname == "cli"){
+                            // Execute a command through the existing Cigorn CLI parser.
+                            if ((trim(webusername).size() != 0) &&
+                                (IPisLoggedIn(MySocket.ConnectedToIP) == false)){
+                                webpage = "ERROR: Web session is not logged in.\r\n";
+                            }else{
+                                string command =
+                                    DecodeWebFormValue(GetFormDataField("command"));
+
+                                command = trim(command);
+
+                                if (command.size() == 0){
+                                    webpage = "ERROR: No command received.\r\n";
+                                }else{
+                                    bool commandOK =
+                                        cli.processCommand(command, dCLI);
+
+                                    if (commandOK){
+                                        webpage = StripAnsi(cli.ResultStr);
+                                        if (webpage.size() == 0)
+                                            webpage = "Command completed.\r\n";
+                                    }else{
+                                        webpage =
+                                            "ERROR: Command failed or is not allowed.\r\n";
+
+                                        if (cli.ResultStr.size() > 0)
+                                            webpage += StripAnsi(cli.ResultStr);
+                                    }
+                                }
+                            }
+
+                            mystate = web_sending;
+                            TimeSinceLastPage = 0;
                         }
                 }
                 busy = true;
@@ -569,6 +716,10 @@ string webserver::GetUserName(string ip){
     }
     return "";
 }
+
+
+
+
 
 
 
