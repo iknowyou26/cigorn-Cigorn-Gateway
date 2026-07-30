@@ -1,4 +1,4 @@
-﻿/* 
+/* 
  * File:   settings.cpp
  * Author: Ryan Le
  * 
@@ -67,10 +67,6 @@ void ConfigureWeb(datatable* dt, webserver* web){
             }
         }
     }
-
-    cout << "ConfigureWeb final port: "
-         << web->portnum
-         << "\r\n";
 
     web->MySocket.protocol = pServer;  // we are a TCP server
     web->MySocket.description = "WEB server";
@@ -298,5 +294,7 @@ void ConfigParameter(string thevariable, string s1, string s2, string s3, string
     ss.str("");
 
 }
+
+
 
 

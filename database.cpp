@@ -1,4 +1,4 @@
-﻿/* // void PQfinish(PGconn *conn);
+/* // void PQfinish(PGconn *conn);
  * File:   database.cpp
  * Author: john
  * 
@@ -239,10 +239,6 @@ if (!dal->Query(query, result))
        int rawType = result.ColumnType(i);
        dt->type[i] = NormalizeColumnType(rawType);
 
-       cout << "Column " << dt->colname[i]
-            << " raw type " << rawType
-            << " normalized to " << dt->type[i]
-            << endl;
        if (IsValidType(dt->type[i]) == false)
           elog.store("Error with table " + tablename + ". Undefined column type:" + intToString(dt->type[i]) + " Col=" + "(" + dt->colname[i] + ")");
 
@@ -1068,6 +1064,7 @@ bool database::ValidateType(int dtype, string s){
     return retval;
 
 }
+
 
 
 

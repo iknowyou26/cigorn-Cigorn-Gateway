@@ -379,9 +379,7 @@ int main(int argc, char *argv[],char *envp[] )
            ss << "Error reading .ini file." << endl;            // Read the .ini setting file to get our configuration/settings
            cout << "Error reading .ini file." << "\r\n";            // Read the .ini setting file to get our configuration/settings
        }
-       cout << "LOGIN CONFIG: user=[" << webusername
-            << "] password=[" << webpassword << "]" << endl;
-
+       // Login configuration debug output removed
        // Initialize the connection to the database
 	// Initialize the connection to the database
 
@@ -607,8 +605,7 @@ myDB.connect(dbHost, dbName, dbUser, dbPass);
        }// High-speed inner program loop. Run here till we shutdown or restart
 
        syslog(LOG_INFO, "Threads halting");
-       cout << "LOGIN CONFIG: user=[" << webusername
-     << "] password=[" << webpassword << "]" << endl;
+       // Login configuration debug output removed
        // Disconnect the web server and email sockets
        myWeb.MySocket.DisconnectSocket();
        myEmail.MySocket.DisconnectSocket();
@@ -685,6 +682,7 @@ myDB.connect(dbHost, dbName, dbUser, dbPass);
 int getMainLoopSpeed(){
     return MainSleeper.getLoopSpeed();
 }
+
 
 
 

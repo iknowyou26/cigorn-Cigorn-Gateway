@@ -664,13 +664,7 @@ int rs232::GetChars()
         if (bytesRead == 0) {
             break;
         }
-
-        cout << "SERIAL RX: "
-             << devicename
-             << " bytesRead=" << bytesRead
-             << " totalBefore=" << bytesReadTotal
-             << endl;
-
+        // Per-byte serial debug output removed for Beta release
         bytesReadTotal += static_cast<int>(bytesRead);
         bytes_in += static_cast<long>(bytesRead);
         time_last_msg = time(nullptr);
@@ -755,5 +749,6 @@ bool rs232::IsOpen() const
     return IsHandleValid(handle);
 }
 } // namespace Communications
+
 
 

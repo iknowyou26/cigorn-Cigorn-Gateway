@@ -278,8 +278,7 @@ string WebPages::HomePage(bool ShowTheIP) {
 
 // Build the Login page
 string WebPages::LoginPage() {
-    cout << "LOGIN DEBUG: LoginPage called" << endl;
-
+    // Login debug output removed
     string s;
     std::stringstream ss;
     htmlformatter fm;
@@ -1518,7 +1517,7 @@ std::string WebPages::DashboardPage()
     ss << "</style></head><body>";
 
     ss << "<div class=\"top\">";
-    ss << "<h1>Cigorn Gateway 5.0.1 Dashboard</h1>";
+    ss << "<h1>Cigorn Gateway 5.0.2 Beta 1 Dashboard</h1>";
     ss << "<div><a href=\"/?page=terminal\">CLI Terminal</a>";
     ss << "<a href=\"/\">Home</a></div>";
     ss << "</div>";
@@ -1726,4 +1725,7 @@ std::string WebPages::TerminalPage()
 
     return ss.str();
 }
+
+
+
 

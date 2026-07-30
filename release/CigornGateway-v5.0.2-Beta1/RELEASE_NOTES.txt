@@ -1,0 +1,15 @@
+Cigorn Gateway v5.0.2 Beta 1
+
+Build verified: July 30, 2026
+
+Verified:
+- Windows startup successful
+- SQL Server connection successful
+- CLI port 2300 running
+- Web port 25002 running
+- Network adapters detected
+- Communication thread started
+- Initialization completed
+
+Known limitation:
+- Configuration pages are read-only in this beta

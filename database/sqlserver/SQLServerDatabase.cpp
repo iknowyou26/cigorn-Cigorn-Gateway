@@ -117,9 +117,7 @@ if (!SQL_SUCCEEDED(ret))
     lastError = "Failed to allocate ODBC statement handle";
     return false;
 }
-
-std::cout << "\nSQL Query:\n" << sql << std::endl;
-
+    // SQL query debug output removed
 ret = SQLExecDirect(
         stmt,
         reinterpret_cast<SQLCHAR*>(
@@ -348,4 +346,5 @@ std::string SQLServerDatabase::LastError() const
 {
     return lastError;
 }
+
 

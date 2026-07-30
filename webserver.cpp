@@ -1,4 +1,4 @@
-﻿#include "platform/PlatformConstants.h"
+#include "platform/PlatformConstants.h"
 #include "CommandLine.h"
 /* 
  * File:   webserver.cpp
@@ -139,16 +139,7 @@ bool webserver::ProcessWebsite(void){
 
     if (previousDebugState != mystate)
     {
-        cout << "WEB state changed: "
-             << previousDebugState
-             << " -> "
-             << mystate
-             << " sockfd=" << MySocket.sockfd
-             << " newsockfd=" << MySocket.newsockfd
-             << " rget=" << MySocket.MyParser.rget
-             << " rput=" << MySocket.MyParser.rput
-             << endl;
-
+        // Web state debug output removed
         previousDebugState = mystate;
     }
 
@@ -716,6 +707,7 @@ string webserver::GetUserName(string ip){
     }
     return "";
 }
+
 
 
 

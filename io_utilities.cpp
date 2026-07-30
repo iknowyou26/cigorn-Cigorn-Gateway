@@ -60,6 +60,7 @@ std::string GetVersionText(void) {
    s += intToString(REV_MINOR);
    s += ".";
    s += intToString(REV_BUILD);
+   s += " Beta 1";
 
     return s;
 }
@@ -136,3 +137,4 @@ string GetMyDirectory(void){
      return ToString(cCurrentPath, sizeof(cCurrentPath));
 
 };
+

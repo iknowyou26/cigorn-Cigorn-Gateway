@@ -41,7 +41,7 @@
 
 #define REV_MAJOR  5
 #define REV_MINOR  0
-#define REV_BUILD  1
+#define REV_BUILD  2
 
 #define INIFILE       "cigorn.ini"
 #define WIRELESSFILE  "Wireless.ini"
@@ -114,4 +114,5 @@
 #define SecondsInAyear  31556900
 
 #endif	/* _RAVEONNET_H */
+
 
