@@ -126,3 +126,18 @@ build-dal/
 
 # Nested copied source repository
 Cigornv4.0.1-minimal/
+
+# Local backup and temporary files
+*.backup
+*.backup-*
+*.linux-backup
+*.watchdog-backup
+*.encoding-backup
+*.garbled-backup
+*.pair-swapped-backup
+*.backup-m4
+test.ps1
+
+# Temporary source backup folders
+backup/
+backup-*/
